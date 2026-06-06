@@ -995,9 +995,9 @@ window.__dataReady.then(data => {
                   const rebRob = custDetail.filter(r=>r.code_type==='REB'||r.code_type==='ROB');
                   const idItems = custDetail.filter(r=>r.code_type==='ID');
 
-                  // จัดกลุ่ม REB/ROB ตามหน่วยงาน
+                  // จัดกลุ่ม REB/ROB ตามเลขบิล (หน่วยงาน/โปรเจกต์)
                   const rebRobGroups = rebRob.reduce((acc,r)=>{
-                    const g=r.damage_group||'ไม่ระบุหน่วยงาน';
+                    const g=r.bill_no||'ไม่ระบุหน่วยงาน';
                     if(!acc[g]) acc[g]=[];
                     acc[g].push(r); return acc;
                   },{});
