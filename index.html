@@ -1021,8 +1021,28 @@ window.__dataReady.then(data => {
     // ปีที่มีข้อมูล
     const years = [...new Set(rawItems.map(r=>r.year))].sort((a,b)=>a-b);
 
-    // กรองตาม year + code (ไม่รวม รับคืนสินค้าใช้ได้)
+    // หา เดือน/ปี ล่าสุดจากข้อมูล
     const notReturnOk = r => !/รับคืนสินค้าใช้ได้/i.test(r.cause||'');
+    const allValid = rawItems.filter(notReturnOk);
+    const latestKey = allValid.length ? [...new Set(allValid.map(r=>`${r.year}-${String(r.month).padStart(2,'0')}`))]
+      .sort().slice(-1)[0] : null;
+    const latestYear  = latestKey ? Number(latestKey.split('-')[0]) : (years[years.length-1]||null);
+    const latestMonth = latestKey ? Number(latestKey.split('-')[1]) : null;
+
+    const [dmgYear,  setDmgYear]  = useState(()=> latestYear  || 'ALL');
+    const [dmgMonth, setDmgMonth] = useState(()=> latestMonth || 'ALL');
+
+    // เดือนที่มีในปีที่เลือก (สำหรับ damage view)
+    const monthsInYear = dmgYear==='ALL' ? [] :
+      [...new Set(allValid.filter(r=>r.year===Number(dmgYear)).map(r=>r.month))].sort((a,b)=>a-b);
+
+    // items สำหรับ damage view (กรองปี+เดือน)
+    const dmgItems = allValid.filter(r =>
+      (dmgYear==='ALL' || r.year===Number(dmgYear)) &&
+      (dmgMonth==='ALL' || r.month===Number(dmgMonth))
+    );
+
+    // กรองตาม year + code (ไม่รวม รับคืนสินค้าใช้ได้) สำหรับ view อื่น
     const items = rawItems.filter(r =>
       notReturnOk(r) &&
       (filterYear==='ALL' || r.year===Number(filterYear)) &&
@@ -1087,16 +1107,28 @@ window.__dataReady.then(data => {
           {value:'detail',label:'ตารางรายการ'}
         ]}/>
         <div style={{display:'flex',gap:'10px',flexWrap:'wrap',alignItems:'center'}}>
-          <select value={filterYear} onChange={e=>setFilterYear(e.target.value)}
-            style={{border:'1.5px solid var(--line-strong)',borderRadius:'8px',padding:'6px 10px',fontFamily:'var(--font)',fontSize:'13px',color:'var(--ink)',background:'#fff'}}>
-            <option value="ALL">ทุกปี</option>
-            {years.map(y=><option key={y} value={y}>ปี {y}</option>)}
-          </select>
-          <select value={filterCode} onChange={e=>setFilterCode(e.target.value)}
-            style={{border:'1.5px solid var(--line-strong)',borderRadius:'8px',padding:'6px 10px',fontFamily:'var(--font)',fontSize:'13px',color:'var(--ink)',background:'#fff'}}>
-            <option value="ALL">ทุกรหัส</option>
-            {Object.entries(CODE_LABEL).map(([k,l])=><option key={k} value={k}>{l}</option>)}
-          </select>
+          {view==='damage' ? <>
+            <select value={dmgYear} onChange={e=>{setDmgYear(e.target.value);setDmgMonth('ALL');}}
+              style={{border:'1.5px solid var(--line-strong)',borderRadius:'8px',padding:'6px 10px',fontFamily:'var(--font)',fontSize:'13px',color:'var(--ink)',background:'#fff'}}>
+              {years.map(y=><option key={y} value={y}>ปี {y}</option>)}
+            </select>
+            <select value={dmgMonth} onChange={e=>setDmgMonth(e.target.value)}
+              style={{border:'1.5px solid var(--line-strong)',borderRadius:'8px',padding:'6px 10px',fontFamily:'var(--font)',fontSize:'13px',color:'var(--ink)',background:'#fff'}}>
+              <option value="ALL">ทุกเดือน</option>
+              {monthsInYear.map(m=><option key={m} value={m}>{MONTHS_TH_SHORT[m-1]}</option>)}
+            </select>
+          </> : <>
+            <select value={filterYear} onChange={e=>setFilterYear(e.target.value)}
+              style={{border:'1.5px solid var(--line-strong)',borderRadius:'8px',padding:'6px 10px',fontFamily:'var(--font)',fontSize:'13px',color:'var(--ink)',background:'#fff'}}>
+              <option value="ALL">ทุกปี</option>
+              {years.map(y=><option key={y} value={y}>ปี {y}</option>)}
+            </select>
+            <select value={filterCode} onChange={e=>setFilterCode(e.target.value)}
+              style={{border:'1.5px solid var(--line-strong)',borderRadius:'8px',padding:'6px 10px',fontFamily:'var(--font)',fontSize:'13px',color:'var(--ink)',background:'#fff'}}>
+              <option value="ALL">ทุกรหัส</option>
+              {Object.entries(CODE_LABEL).map(([k,l])=><option key={k} value={k}>{l}</option>)}
+            </select>
+          </>}
         </div>
       </div>
 
@@ -1224,7 +1256,7 @@ window.__dataReady.then(data => {
       })()}
 
       {/* Damage view — มูลค่าเสียหาย จากมาก→น้อย + ลูกค้า คลิกดูรายละเอียด */}
-      {view==='damage' && <DamageRankView items={items} totalAll={totalAll} selCust={selCust} setSelCust={setSelCust}/>}
+      {view==='damage' && <DamageRankView items={dmgItems} totalAll={dmgItems.reduce((a,r)=>a+(r.amount||0),0)} selCust={selCust} setSelCust={setSelCust}/>}
 
       {/* Cause view */}
       {view==='cause' && <>
