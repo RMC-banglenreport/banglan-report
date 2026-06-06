@@ -1292,36 +1292,46 @@ window.__dataReady.then(data => {
 
       {/* ===== ตารางสรุป ===== */}
       {view==='summary' && (()=>{
-        // "รับคืนสินค้าใช้ได้" = ไม่นับในยอดเสียหาย แต่แสดงแยก
-        const allItems = rawItems.filter(r => filterYear==='ALL' || r.year===Number(filterYear))
-                                 .filter(r => !/รับคืนสินค้าใช้ได้/i.test(r.cause||''));
-        const monthKeys = [...new Set(allItems.map(r=>`${r.year}-${r.month}`))].sort((a,b)=>{
-          const[ay,am]=a.split('-').map(Number),[by,bm]=b.split('-').map(Number);
-          return ay!==by?ay-by:am-bm;
-        });
-        const yearSet = [...new Set(allItems.map(r=>r.year))].sort((a,b)=>a-b);
+        const curYear = filterYear==='ALL' ? null : Number(filterYear);
+        const prevYear = curYear ? curYear-1 : null;
 
-        // คอลัมน์ทั้งหมด: [{type:'year',year:2569,label:'รวมปี 2569'}, {type:'month',key:'2569-4',label:'เม.ย.-69'}, ...]
+        // ข้อมูลทุกปี (ไม่กรองเดือน) สำหรับ รวมปี
+        const allItemsYear = rawItems.filter(r => !/รับคืนสินค้าใช้ได้/i.test(r.cause||''));
+        // ข้อมูลปีปัจจุบัน (ทุกเดือน)
+        const allItemsCur  = allItemsYear.filter(r => !curYear || r.year===curYear);
+        // ข้อมูลปีก่อน (ทุกเดือน)
+        const allItemsPrev = prevYear ? allItemsYear.filter(r=>r.year===prevYear) : [];
+
+        // เดือนของปีปัจจุบัน
+        const allMonthsCur = [...new Set(allItemsCur.map(r=>r.month))].sort((a,b)=>a-b);
+        // เดือนที่จะแสดง (ถ้าเลือก selMonths ให้กรอง)
+        const showMonths = selMonths.size>0 ? allMonthsCur.filter(m=>selMonths.has(m)) : allMonthsCur;
+
+        // สร้าง cols: [รวมปีก่อน, รวมปีปัจจุบัน, เดือนที่เลือก...]
         const cols = [];
-        yearSet.forEach(y => {
-          cols.push({type:'year', year:y, label:`รวมปี ${y}`});
-          monthKeys.filter(k=>k.startsWith(y+'-')).forEach(k=>{
-            const[,m]=k.split('-').map(Number);
-            cols.push({type:'month', key:k, year:y, month:m, label:`${MONTHS_TH_SHORT[m-1]}-${String(y).slice(-2)}`});
-          });
+        if(prevYear) cols.push({type:'prevYear', year:prevYear, label:`รวมปี ${prevYear}`});
+        if(curYear)  cols.push({type:'year', year:curYear, label:`รวมปี ${curYear}`});
+        showMonths.forEach(m=>{
+          const key=`${curYear||''}-${m}`;
+          cols.push({type:'month', key, year:curYear, month:m, label:`${MONTHS_TH_SHORT[m-1]}-${String(curYear||'').slice(-2)}`});
         });
+
+        // เดือน keys ทั้งหมดของปีปัจจุบัน (สำหรับ colSales รวมปี)
+        const monthKeysCur = allMonthsCur.map(m=>`${curYear}-${m}`);
+        const monthKeysPrev = prevYear ? [...new Set(allItemsPrev.map(r=>r.month))].sort((a,b)=>a-b).map(m=>`${prevYear}-${m}`) : [];
 
         // helper: ยอดขายตามคอลัมน์
         const colSales = col => {
-          if(col.type==='year') return monthKeys.filter(k=>k.startsWith(col.year+'-')).reduce((a,k)=>a+(sales[k]||0),0);
+          if(col.type==='year')     return monthKeysCur.reduce((a,k)=>a+(sales[k]||0),0);
+          if(col.type==='prevYear') return monthKeysPrev.reduce((a,k)=>a+(sales[k]||0),0);
           return sales[col.key]||0;
         };
-        // helper: ยอดเสียหายของ rows ที่ match ตามคอลัมน์
+        // helper: ยอดเสียหายตามคอลัมน์
         const colAmt = (matchFn, col) => {
-          const base = allItems.filter(r => matchFn(r.cause));
-          if(col.type==='year') return base.filter(r=>r.year===col.year).reduce((a,r)=>a+(r.amount||0),0);
+          if(col.type==='year')     return allItemsCur.filter(r=>matchFn(r.cause)).reduce((a,r)=>a+(r.amount||0),0);
+          if(col.type==='prevYear') return allItemsPrev.filter(r=>matchFn(r.cause)).reduce((a,r)=>a+(r.amount||0),0);
           const[y,m]=col.key.split('-').map(Number);
-          return base.filter(r=>r.year===y&&r.month===m).reduce((a,r)=>a+(r.amount||0),0);
+          return allItemsYear.filter(r=>r.year===y&&r.month===m&&matchFn(r.cause)).reduce((a,r)=>a+(r.amount||0),0);
         };
         const groupAmt = (grp, col) => grp.rows.reduce((a,row)=>a+colAmt(row.fn,col),0);
         const totalAmt = col => DAMAGE_GROUPS.reduce((a,g)=>a+groupAmt(g,col),0);
@@ -1344,7 +1354,10 @@ window.__dataReady.then(data => {
             <thead>
               <tr style={{background:'#f5f5f5'}}>
                 <th className="ta-l" style={{minWidth:'180px',position:'sticky',left:0,background:'#f5f5f5',zIndex:2}}>รายการ</th>
-                {cols.map((c,i)=><th key={i} colSpan={2} style={{textAlign:'center',background:c.type==='year'?'#d9ead3':'#f5f5f5',borderLeft:'1px solid #ddd',minWidth:'100px'}}>{c.label}</th>)}
+                {cols.map((c,i)=><th key={i} colSpan={2} style={{textAlign:'center',
+                  background:c.type==='year'?'#d9ead3':c.type==='prevYear'?'#fce5cd':'#f5f5f5',
+                  color:c.type==='prevYear'?'#b45f06':'inherit',
+                  borderLeft:'1px solid #ddd',minWidth:'100px'}}>{c.label}</th>)}
               </tr>
               <tr style={{background:'#fafafa',fontSize:'10px',color:'var(--muted-text)'}}>
                 <th style={{position:'sticky',left:0,background:'#fafafa',zIndex:2}}></th>
