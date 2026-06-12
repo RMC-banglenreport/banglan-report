@@ -949,21 +949,25 @@ window.__dataReady.then(data => {
         }
       </ChartCard>
 
-      {/* ตาราง */}
-      <ChartCard title="ตารางข้อมูลกำลังอัดลูกปูน" subtitle={`ช่วงเวลาที่เลือก • มีข้อมูล KSC ${filtered.filter(r=>r.strength_ksc!=null).length} แถว`} span="full">
-        <div className="table-wrap"><table className="dt">
-          <thead><tr><th>วันที่</th><th>สูตร</th><th>ชุดที่</th><th>อายุ(วัน)</th><th>กำลังอัด(KSC)</th><th>แกว่ง(%)</th></tr></thead>
-          <tbody>{[...filtered].filter(r=>r.strength_ksc!=null).reverse().slice(0,50).map((r,i)=><tr key={i}>
-            <td>{r.test_date}</td>
-            <td>{r.formula}</td>
-            <td>{r.set_no}</td>
-            <td>{r.age_days}</td>
-            <td style={{color:Number(r.age_days)===1&&Number(r.strength_ksc)<315?'#c0392b':Number(r.age_days)===7&&Number(r.strength_ksc)<450?'#e67e22':'inherit',fontWeight:'bold'}}>{fmt(r.strength_ksc,2)}</td>
-            <td>{r.deviation_pct!=null?fmt(r.deviation_pct,1)+'%':'–'}</td>
-          </tr>)}</tbody>
-        </table></div>
-      </ChartCard>
     </div>;
+  }
+
+  function SlumpTable(){
+    const allData = (D.slumps || []).filter(r=>r.strength_ksc!=null);
+    const rows = [...allData].reverse().slice(0,50);
+    return <ChartCard title="ตารางข้อมูลกำลังอัดลูกปูน" subtitle={`50 แถวล่าสุดที่มีผลทดสอบ`} span="full">
+      <div className="table-wrap"><table className="dt">
+        <thead><tr><th>วันที่</th><th>สูตร</th><th>ชุดที่</th><th>อายุ(วัน)</th><th>กำลังอัด(KSC)</th><th>แกว่ง(%)</th></tr></thead>
+        <tbody>{rows.map((r,i)=><tr key={i}>
+          <td>{r.test_date}</td>
+          <td>{r.formula}</td>
+          <td>{r.set_no}</td>
+          <td>{r.age_days}</td>
+          <td style={{color:Number(r.age_days)===1&&Number(r.strength_ksc)<315?'#c0392b':Number(r.age_days)===7&&Number(r.strength_ksc)<450?'#e67e22':'inherit',fontWeight:'bold'}}>{fmt(r.strength_ksc,2)}</td>
+          <td>{r.deviation_pct!=null?fmt(r.deviation_pct,1)+'%':'–'}</td>
+        </tr>)}</tbody>
+      </table></div>
+    </ChartCard>;
   }
 
   function QualityTab({year}){
@@ -973,6 +977,7 @@ window.__dataReady.then(data => {
     const strength=dec.map(d=>d.strength),cementTotal=dec.map(d=>d.cementTotal),cementBig=dec.map(d=>d.cementBig),cementI18=dec.map(d=>d.cementI18);
     const rock34=dec.map(d=>d.rock34),rock1=dec.map(d=>d.rock1),sand=dec.map(d=>d.sand),T=D.mixTarget;
     return <div className="grid">
+      <SlumpChart/>
       <div className="kpi-row kpi-row--5">
         <KpiCard label="Strength เฉลี่ย" value={fmt(avg(strength),0)} unit=" ksc" sub={`ต่ำกว่าเกณฑ์ 450 จำนวน ${strength.filter(v=>v!=null&&v<450).length} ช่วง`} accent={strength.some(v=>v!=null&&v<450)?PALETTE.cancel:PALETTE.strength}/>
         <KpiCard label="ปูนเฉลี่ย (ทั้งหมด)" value={fmt(avg(cementTotal),1)} unit=" kg/m³" sub="ค่าเฉลี่ยใช้ปูนรวม" accent={PALETTE.produced}/>
@@ -996,7 +1001,7 @@ window.__dataReady.then(data => {
           <tfoot><tr><td className="ta-l">ค่าเฉลี่ย</td><td>{fmt(avg(strength),0)}</td><td>{fmt(avg(cementTotal),1)}</td><td>{fmt(avg(cementBig),1)}</td><td>{fmt(avg(cementI18),1)}</td><td>{fmt(avg(rock34),0)}</td><td>{fmt(avg(rock1),0)}</td><td>{fmt(avg(sand),0)}</td></tr></tfoot>
         </table></div>
       </ChartCard>
-      <SlumpChart/>
+      <SlumpTable/>
     </div>;
   }
 
