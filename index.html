@@ -858,9 +858,28 @@ window.__dataReady.then(data => {
 
   function SlumpChart(){
     const allData = D.slumps || [];
-    const [selFormula, setSelFormula] = useState('ALL');
-    const [selAge,     setSelAge]     = useState('ALL');
-    const [period,     setPeriod]     = useState('90');
+
+    // dates ทั้งหมดในข้อมูล
+    const allDates = [...new Set(allData.map(r=>r.test_date).filter(Boolean))].sort();
+    const minDate  = allDates[0] || '';
+    const maxDate  = allDates[allDates.length-1] || '';
+
+    // default: 90 วันล่าสุด
+    const defaultStart = (()=>{ const d=new Date(); d.setDate(d.getDate()-90); return d.toISOString().slice(0,10); })();
+    const [dateFrom,  setDateFrom]  = useState(minDate < defaultStart ? defaultStart : minDate);
+    const [dateTo,    setDateTo]    = useState(maxDate);
+    const [selAge,    setSelAge]    = useState('ALL');
+    // สูตร: multi-select (Set)
+    const [selFormulas, setSelFormulas] = useState(new Set(['ALL']));
+
+    const toggleFormula = f => setSelFormulas(prev => {
+      const s = new Set(prev);
+      if (f === 'ALL') return new Set(['ALL']);
+      s.delete('ALL');
+      if (s.has(f)) { s.delete(f); if (!s.size) s.add('ALL'); }
+      else s.add(f);
+      return s;
+    });
 
     if (!allData.length) return (
       <ChartCard title="กำลังอัดลูกปูน (สเต้งคอนกรีต)" subtitle="ยังไม่มีข้อมูล — กรุณา sync ข้อมูลก่อน" span="full">
@@ -868,87 +887,108 @@ window.__dataReady.then(data => {
       </ChartCard>
     );
 
-    // กรองตามช่วงเวลา
-    const now = new Date();
-    const cutoff = period === 'ALL' ? null : new Date(now - Number(period)*24*60*60*1000);
-    let filtered = allData.filter(r => {
+    const formulas = [...new Set(allData.map(r=>r.formula).filter(Boolean))].sort();
+    const ages     = [...new Set(allData.map(r=>r.age_days).filter(v=>v!=null))].sort((a,b)=>a-b);
+
+    const filtered = allData.filter(r => {
       if (!r.test_date) return false;
-      if (cutoff && new Date(r.test_date) < cutoff) return false;
-      if (selFormula !== 'ALL' && r.formula !== selFormula) return false;
+      if (dateFrom && r.test_date < dateFrom) return false;
+      if (dateTo   && r.test_date > dateTo)   return false;
+      if (!selFormulas.has('ALL') && !selFormulas.has(r.formula)) return false;
       if (selAge !== 'ALL' && Number(r.age_days) !== Number(selAge)) return false;
       return true;
     });
 
-    // หา series แบบ formula+age
-    const formulas = [...new Set(allData.map(r=>r.formula).filter(Boolean))].sort();
-    const ages     = [...new Set(allData.map(r=>r.age_days).filter(v=>v!=null))].sort((a,b)=>a-b);
-
-    // กลุ่ม series ที่จะแสดง
-    const seriesDefs = [];
-    const fmls = selFormula === 'ALL' ? formulas : [selFormula];
+    const fmls = selFormulas.has('ALL') ? formulas : formulas.filter(f=>selFormulas.has(f));
     const ageList = selAge === 'ALL' ? ages : [Number(selAge)];
     const seriesColors = ['#2980b9','#e67e22','#27ae60','#8e44ad','#c0392b','#16a085'];
     let ci = 0;
+    const seriesDefs = [];
     fmls.forEach(f => ageList.forEach(a => {
-      seriesDefs.push({ label: `${f} (${a} วัน)`, formula: f, age: a, color: seriesColors[ci++ % seriesColors.length] });
+      seriesDefs.push({ label:`${f} (${a}วัน)`, formula:f, age:a, color:seriesColors[ci++%seriesColors.length] });
     }));
 
-    // รวม dates ทั้งหมด
     const dateSet = [...new Set(filtered.map(r=>r.test_date))].sort();
-
-    // สร้าง series data — ค่าเฉลี่ย KSC ต่อวันต่อ formula+age
     const series = seriesDefs.map(sd => ({
-      label: sd.label,
-      color: sd.color,
+      label: sd.label, color: sd.color,
       data: dateSet.map(d => {
-        const rows = filtered.filter(r => r.test_date === d && r.formula === sd.formula && Number(r.age_days) === sd.age && r.strength_ksc != null);
+        const rows = filtered.filter(r => r.test_date===d && r.formula===sd.formula && Number(r.age_days)===sd.age && r.strength_ksc!=null);
         return rows.length ? rows.reduce((s,r)=>s+Number(r.strength_ksc),0)/rows.length : null;
       })
     }));
 
-    // KPI
     const allKsc = filtered.filter(r=>r.strength_ksc!=null).map(r=>Number(r.strength_ksc));
     const avgKsc = allKsc.length ? allKsc.reduce((s,v)=>s+v,0)/allKsc.length : null;
 
-    const btnStyle = (active) => ({
+    const btnStyle = active => ({
       padding:'4px 12px', borderRadius:6, border:'1px solid #ccc', cursor:'pointer',
-      background: active ? '#1155cc' : '#fff', color: active ? '#fff' : '#333',
-      fontWeight: active ? 'bold' : 'normal', fontSize:13
+      background: active?'#1155cc':'#fff', color: active?'#fff':'#333',
+      fontWeight: active?'bold':'normal', fontSize:13
     });
+    const inputStyle = {
+      padding:'4px 8px', borderRadius:6, border:'1px solid #ccc', fontSize:13, cursor:'pointer'
+    };
+
+    // shortcut ช่วงเวลา
+    const setPreset = days => {
+      const to = maxDate;
+      if (days === 0) { setDateFrom(minDate); setDateTo(maxDate); return; }
+      const from = new Date(); from.setDate(from.getDate()-days);
+      setDateFrom(from.toISOString().slice(0,10));
+      setDateTo(to);
+    };
 
     return <div style={{gridColumn:'1/-1'}}>
-      {/* KPI */}
       <div className="kpi-row kpi-row--5" style={{marginBottom:12}}>
         <KpiCard label="กำลังอัดเฉลี่ย" value={avgKsc!=null?fmt(avgKsc,0):'–'} unit=" KSC" sub={`จาก ${allKsc.length} ตัวอย่าง`} accent="#2980b9"/>
-        <KpiCard label="ต่ำกว่าเกณฑ์ (<315 KSC, 1วัน)" value={filtered.filter(r=>Number(r.age_days)===1&&r.strength_ksc!=null&&Number(r.strength_ksc)<315).length} unit=" ตัวอย่าง" sub="อายุ 1 วัน" accent="#c0392b"/>
-        <KpiCard label="ต่ำกว่าเกณฑ์ (<450 KSC, 7วัน)" value={filtered.filter(r=>Number(r.age_days)===7&&r.strength_ksc!=null&&Number(r.strength_ksc)<450).length} unit=" ตัวอย่าง" sub="อายุ 7 วัน" accent="#e67e22"/>
+        <KpiCard label="ต่ำกว่าเกณฑ์ 1วัน (<315)" value={filtered.filter(r=>Number(r.age_days)===1&&r.strength_ksc!=null&&Number(r.strength_ksc)<315).length} unit=" ตัวอย่าง" accent="#c0392b"/>
+        <KpiCard label="ต่ำกว่าเกณฑ์ 7วัน (<450)" value={filtered.filter(r=>Number(r.age_days)===7&&r.strength_ksc!=null&&Number(r.strength_ksc)<450).length} unit=" ตัวอย่าง" accent="#e67e22"/>
       </div>
 
-      <ChartCard title="กำลังอัดลูกปูน (สเต้งคอนกรีต)" subtitle="ค่าเฉลี่ย KSC ต่อวัน • เทียบตามสูตรและอายุคอนกรีต" span="full"
+      <ChartCard title="กำลังอัดลูกปูน (สเต้งคอนกรีต)" subtitle="ค่าเฉลี่ย KSC ต่อวัน" span="full"
         right={<Legend items={series.map(s=>({label:s.label,color:s.color}))}/>}>
-        {/* Filters */}
-        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12,alignItems:'center'}}>
-          <span style={{fontSize:13,color:'#666'}}>ช่วงเวลา:</span>
-          {[['7','7 วัน'],['30','30 วัน'],['90','90 วัน'],['ALL','ทั้งหมด']].map(([v,l])=>
-            <button key={v} style={btnStyle(period===v)} onClick={()=>setPeriod(v)}>{l}</button>
-          )}
-          <span style={{fontSize:13,color:'#666',marginLeft:8}}>สูตร:</span>
-          {[['ALL','ทั้งหมด'],...formulas.map(f=>[f,f])].map(([v,l])=>
-            <button key={v} style={btnStyle(selFormula===v)} onClick={()=>setSelFormula(v)}>{l}</button>
-          )}
-          <span style={{fontSize:13,color:'#666',marginLeft:8}}>อายุ:</span>
-          {[['ALL','ทั้งหมด'],...ages.map(a=>[String(a),a+' วัน'])].map(([v,l])=>
-            <button key={v} style={btnStyle(selAge===v)} onClick={()=>setSelAge(v)}>{l}</button>
-          )}
+        <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:14,alignItems:'center',background:'#f8f9fb',padding:'10px 14px',borderRadius:8}}>
+
+          {/* ช่วงวันที่ */}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:13,color:'#555',fontWeight:600}}>ช่วงวันที่:</span>
+            <input type="date" style={inputStyle} value={dateFrom} min={minDate} max={dateTo||maxDate}
+              onChange={e=>setDateFrom(e.target.value)}/>
+            <span style={{fontSize:13,color:'#888'}}>–</span>
+            <input type="date" style={inputStyle} value={dateTo} min={dateFrom||minDate} max={maxDate}
+              onChange={e=>setDateTo(e.target.value)}/>
+          </div>
+
+          {/* shortcut */}
+          <div style={{display:'flex',gap:4}}>
+            {[[7,'7วัน'],[30,'30วัน'],[90,'90วัน'],[0,'ทั้งหมด']].map(([d,l])=>
+              <button key={d} style={{...btnStyle(false),padding:'3px 9px'}} onClick={()=>setPreset(d)}>{l}</button>
+            )}
+          </div>
+
+          {/* สูตร multi-select */}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:13,color:'#555',fontWeight:600}}>สูตร:</span>
+            <button style={btnStyle(selFormulas.has('ALL'))} onClick={()=>toggleFormula('ALL')}>ทั้งหมด</button>
+            {formulas.map(f=><button key={f} style={btnStyle(selFormulas.has(f))} onClick={()=>toggleFormula(f)}>{f}</button>)}
+          </div>
+
+          {/* อายุ */}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:13,color:'#555',fontWeight:600}}>อายุ:</span>
+            {[['ALL','ทั้งหมด'],...ages.map(a=>[String(a),a+' วัน'])].map(([v,l])=>
+              <button key={v} style={btnStyle(selAge===v)} onClick={()=>setSelAge(v)}>{l}</button>
+            )}
+          </div>
         </div>
+
         {dateSet.length
           ? <LineChart categories={dateSet} unit="KSC" decimals={0} series={series}
               targets={selAge==='1'?[{value:315,color:'#c0392b',label:'เกณฑ์ 315'}]:selAge==='7'?[{value:450,color:'#e67e22',label:'เกณฑ์ 450'}]:[]}
-              height={320}/>
-          : <div className="empty">ไม่มีข้อมูลในช่วงเวลาที่เลือก</div>
+              height={340}/>
+          : <div className="empty">ไม่มีข้อมูลในช่วงวันที่เลือก</div>
         }
       </ChartCard>
-
     </div>;
   }
 
