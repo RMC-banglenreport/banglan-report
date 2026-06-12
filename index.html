@@ -525,7 +525,7 @@ function BarChart({categories,values,color=PALETTE.produced,target=null,targetLa
 
 function LineChart({categories,series,targets=[],height=300,unit='',decimals=0,yMin=null,yMax=null,area=false,showValues=false,dangerBelow=null,boxedLabels=false}){
   const [ref,W]=useMeasure(); const [hover,setHover]=useState(null);
-  const pad={t:boxedLabels?44:20,r:16,b:40,l:52},H=height,iW=Math.max(10,W-pad.l-pad.r),iH=H-pad.t-pad.b;
+  const pad={t:boxedLabels?44:20,r:boxedLabels?52:24,b:40,l:62},H=height,iW=Math.max(10,W-pad.l-pad.r),iH=H-pad.t-pad.b;
   const allV=series.flatMap(s=>s.data.filter(v=>v!=null)).concat(targets.map(t=>t.value));
   let lo=yMin!=null?yMin:Math.min(...allV),hi=yMax!=null?yMax:Math.max(...allV);
   if(yMin==null)lo=Math.floor(lo*0.96); if(yMax==null)hi=Math.ceil(hi*1.04);
