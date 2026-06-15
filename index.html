@@ -574,9 +574,9 @@ function LineChart({categories,series,targets=[],height=300,unit='',decimals=0,y
       {targets.map((t,i)=><g key={'t'+i}><line x1={pad.l} x2={W-pad.r} y1={y(t.value)} y2={y(t.value)} stroke={t.color} strokeWidth="1.5" strokeDasharray="5 4" opacity="0.8"/><text x={W-pad.r} y={y(t.value)-5} textAnchor="end" className="target-lbl" fill={t.color}>{t.label} {fmt(t.value,decimals)}</text></g>)}
       {area&&series.length===1&&<path d={`${lp(series[0].data)} L${x(categories.length-1)},${pad.t+iH} L${x(0)},${pad.t+iH} Z`} fill={series[0].color} opacity="0.10"/>}
       {series.map((s,si)=><g key={si}>
-        <path d={lp(s.data)} fill="none" stroke={s.color} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round"/>
-        {showValues&&!boxedLabels&&s.data.map((v,i)=>v==null?null:<text key={'vl'+i} x={x(i)} y={y(v)-11} textAnchor="middle" className="bar-val" fill={dangerBelow!=null&&v<dangerBelow?PALETTE.cancel:s.color}>{fmt(v,decimals)}</text>)}
-        {s.data.map((v,i)=>v==null?null:<circle key={i} cx={x(i)} cy={y(v)} r={hover===i?5:(dangerBelow!=null&&v<dangerBelow?4:3)} fill="#fff" stroke={dangerBelow!=null&&v<dangerBelow?PALETTE.cancel:s.color} strokeWidth="2"/>)}
+        <path d={lp(s.data)} fill="none" stroke={s.color} strokeWidth={s.dashed?1.8:2.4} strokeDasharray={s.dashed?"6 4":undefined} strokeLinejoin="round" strokeLinecap="round"/>
+        {showValues&&!boxedLabels&&!s.dashed&&s.data.map((v,i)=>v==null?null:<text key={'vl'+i} x={x(i)} y={y(v)-11} textAnchor="middle" className="bar-val" fill={dangerBelow!=null&&v<dangerBelow?PALETTE.cancel:s.color}>{fmt(v,decimals)}</text>)}
+        {s.data.map((v,i)=>v==null?null:<circle key={i} cx={x(i)} cy={y(v)} r={s.dashed?3.5:(hover===i?5:(dangerBelow!=null&&v<dangerBelow?4:3))} fill={s.dashed?s.color:"#fff"} stroke={dangerBelow!=null&&v<dangerBelow?PALETTE.cancel:s.color} strokeWidth="2"/>)}
       </g>)}
       {boxEls}
       {hover!=null&&<line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={pad.t+iH} stroke={PALETTE.axis} strokeDasharray="3 3" opacity="0.5"/>}
@@ -1918,7 +1918,7 @@ window.__dataReady.then(data => {
       allFormulas.some(f=>CURVE_AGES.every(a=>rows.some(r=>sd(r)===date&&fm(r)===f&&ag(r)===a&&ks(r)>0)))
     );
     const c2Forms=selFormulas2.length?selFormulas2:allFormulas;
-    const c2Series=selSample?c2Forms.map((f,fi)=>({
+    const c2DataSeries=selSample?c2Forms.map((f,fi)=>({
       label:f, color:COLORS[fi%COLORS.length],
       data:CURVE_AGES.map(a=>{
         const rs=rows.filter(r=>sd(r)===selSample&&fm(r)===f&&ag(r)===a);
@@ -1926,6 +1926,41 @@ window.__dataReady.then(data => {
         return Math.round((rs.reduce((s,r)=>s+ks(r),0)/rs.length)*10)/10;
       })
     })):[];
+
+    // target helper
+    const isNP280=f=>f.toUpperCase().includes('280');
+    const TARGET_NORMAL={1:340,3:400,5:420,7:450};
+    const TARGET_NP280={1:340,7:420};
+
+    // chart 1 — horizontal target lines + average
+    const c1Targets=[];
+    const seenT=new Set();
+    activeForms.forEach(f=>{
+      const spec=isNP280(f)?TARGET_NP280:TARGET_NORMAL;
+      activeAges.forEach(a=>{
+        const tv=spec[a]; if(!tv) return;
+        const key=`${a}-${isNP280(f)}`;
+        if(seenT.has(key)) return; seenT.add(key);
+        c1Targets.push({value:tv,label:`เกณฑ์ Day${a}${isNP280(f)?' NP280':''}`,color:'#e74c3c'});
+      });
+    });
+    const c1AllVals=c1Series.flatMap(s=>s.data.filter(v=>v!=null));
+    const c1Avg=c1AllVals.length?Math.round(c1AllVals.reduce((a,b)=>a+b,0)/c1AllVals.length*10)/10:null;
+    if(c1Avg!=null) c1Targets.push({value:c1Avg,label:'เฉลี่ย',color:'#e67e22'});
+
+    // chart 2 — target dashed series + average
+    const c2HasNormal=c2Forms.some(f=>!isNP280(f));
+    const c2HasNP280=c2Forms.some(f=>isNP280(f));
+    const c2TargetSeries=[];
+    if(c2HasNormal) c2TargetSeries.push({label:'เกณฑ์ (ทั่วไป)',color:'#e74c3c',dashed:true,data:[340,400,420,450]});
+    if(c2HasNP280) c2TargetSeries.push({label:'เกณฑ์ NP280',color:'#9b59b6',dashed:true,data:[340,null,null,420]});
+    const c2AvgData=selSample?CURVE_AGES.map(a=>{
+      const vals=c2DataSeries.map(s=>s.data[CURVE_AGES.indexOf(a)]).filter(v=>v!=null);
+      return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:null;
+    }):[];
+    const c2AvgSeries=(selSample&&c2DataSeries.length>1&&c2AvgData.some(v=>v!=null))
+      ?[{label:'ค่าเฉลี่ย',color:'#e67e22',dashed:true,data:c2AvgData}]:[];
+    const c2Series=[...c2DataSeries,...c2TargetSeries,...c2AvgSeries];
 
     const btnStyle={padding:'4px 10px',borderRadius:5,border:'1px solid #ccd',background:'#f5f6fa',cursor:'pointer',fontSize:13,color:'#444'};
 
@@ -1950,7 +1985,7 @@ window.__dataReady.then(data => {
                 <span style={{width:18,height:3,background:s.color,display:'inline-block',borderRadius:2}}></span>{s.label}
               </span>)}
             </div>
-            <LineChart categories={c1Dates.map(shortDate)} unit="KSC" decimals={1} showValues boxedLabels series={c1Series.filter(s=>s.data.some(v=>v!=null))} height={320}/>
+            <LineChart categories={c1Dates.map(shortDate)} unit="KSC" decimals={1} showValues boxedLabels series={c1Series.filter(s=>s.data.some(v=>v!=null))} targets={c1Targets} height={320}/>
           </>
         }
       </div>
@@ -1972,7 +2007,10 @@ window.__dataReady.then(data => {
           :<>
             <div style={{display:'flex',gap:16,flexWrap:'wrap',marginBottom:8}}>
               {c2Series.filter(s=>s.data.some(v=>v!=null)).map(s=><span key={s.label} style={{fontSize:12,display:'flex',alignItems:'center',gap:5,color:'#111',fontWeight:600}}>
-                <span style={{width:18,height:3,background:s.color,display:'inline-block',borderRadius:2}}></span>{s.label}
+                {s.dashed
+                  ?<span style={{width:22,height:0,borderTop:`2.5px dashed ${s.color}`,display:'inline-block'}}></span>
+                  :<span style={{width:18,height:3,background:s.color,display:'inline-block',borderRadius:2}}></span>}
+                {s.label}
               </span>)}
             </div>
             <LineChart categories={CURVE_AGES.map(a=>`Day ${a}`)} unit="KSC" decimals={1} showValues boxedLabels series={c2Series.filter(s=>s.data.some(v=>v!=null))} height={280}/>
