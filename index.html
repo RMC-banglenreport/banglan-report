@@ -601,7 +601,13 @@ function LineChart({categories,series,targets=[],height=300,unit='',decimals=0,y
       </g>)}
       {boxEls}
       {hover!=null&&<line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={pad.t+iH} stroke={PALETTE.axis} strokeDasharray="3 3" opacity="0.5"/>}
-      {categories.map((cat,ci)=><text key={ci} x={x(ci)} y={H-pad.b+18} textAnchor={ci===0?'start':ci===categories.length-1?'end':'middle'} className="ax-lbl">{cat}</text>)}
+      {categories.map((cat,ci)=>{
+        const anchor=ci===0?'start':ci===categories.length-1?'end':'middle';
+        const spIdx=cat.search(/\s(?=[^\s]*$)/);
+        if(spIdx>-1){const p1=cat.slice(0,spIdx),p2=cat.slice(spIdx+1);
+          return <text key={ci} x={x(ci)} y={H-pad.b+14} textAnchor={anchor} className="ax-lbl"><tspan x={x(ci)} dy="0">{p1}</tspan><tspan x={x(ci)} dy="13">{p2}</tspan></text>;}
+        return <text key={ci} x={x(ci)} y={H-pad.b+18} textAnchor={anchor} className="ax-lbl">{cat}</text>;
+      })}
     </svg>
     {hover!=null&&<Tooltip tip={{x:Math.min(x(hover)+12,W-150),y:pad.t+4,title:categories[hover],rows:series.map(s=>({color:s.color,label:s.label,value:s.data[hover]==null?'–':fmt(s.data[hover],decimals)+(unit?' '+unit:'')}))}}/>}
   </div>;
