@@ -590,7 +590,10 @@ function LineChart({categories,series,targets=[],height=300,unit='',decimals=0,y
         }
         return tSorted.map((t,i)=><g key={'t'+i}>
           <line x1={pad.l} x2={W-pad.r} y1={y(t.value)} y2={y(t.value)} stroke={t.color} strokeWidth="1.5" strokeDasharray="5 4" opacity="0.8"/>
-          {t.label&&<text x={W-pad.r+6} y={t.ly} textAnchor="start" className="target-lbl" fill={t.color}>{t.label} {fmt(t.value,decimals)}</text>}
+          {t.label&&<g>
+            <rect x={W-pad.r+4} y={t.ly-11} width={t.label.length*7+fmt(t.value,decimals).length*7+10} height={14} fill="white" rx="2" opacity="0.85"/>
+            <text x={W-pad.r+6} y={t.ly} textAnchor="start" className="target-lbl" fill={t.color}>{t.label} {fmt(t.value,decimals)}</text>
+          </g>}
         </g>);
       })()}
       {area&&series.length===1&&<path d={`${lp(series[0].data)} L${x(categories.length-1)},${pad.t+iH} L${x(0)},${pad.t+iH} Z`} fill={series[0].color} opacity="0.10"/>}
@@ -2129,7 +2132,7 @@ window.__dataReady.then(data => {
           <LineChart
             categories={dLabels}
             series={[{label:'Strength',color:'#2f5fd0',data:dVals}]}
-            targets={[{value:450,label:'ขั้นต่ำ',color:'#e74c3c'},...(dAvg!=null?[{value:dAvg,label:'',color:'#5a8f3c'}]:[])]}
+            targets={[{value:450,label:'ขั้นต่ำ',color:'#e74c3c'},...(dAvg!=null?[{value:dAvg,label:'ค่าเฉลี่ย',color:'#5a8f3c'}]:[])]}
 
             dangerBelow={450}
             showValues
