@@ -303,7 +303,7 @@ function syncMonthly(ss) {
 // ============================================================
 function syncDecades(ss) {
   const sheet = ss.getSheetByName('คุณภาพ10วัน');
-  if (!sheet) { Logger.log('ไม่พบ Sheet "คุณภาพ10วัน"'); return; }
+  if (!sheet) { return; }
 
   const rows = sheet.getDataRange().getValues();
   const data = rows.slice(1).filter(r => r[0] && r[1]);
