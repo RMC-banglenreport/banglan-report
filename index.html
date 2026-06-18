@@ -2438,7 +2438,7 @@ window.__dataReady.then(data => {
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
         <label style={{fontSize:13,color:'#64748b',fontWeight:500,whiteSpace:'nowrap'}}>เลือกเดือน:</label>
         <select value={selMonth} onChange={e=>setSelMonth(Number(e.target.value))} style={{padding:'7px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,background:'#fff',outline:'none',fontFamily:'inherit',cursor:'pointer',color:'#1e293b',fontWeight:600}}>
-          {THAI_M.map((m,i)=>activeMs.has(i+1)?<option key={i+1} value={i+1}>{m} {selYear}</option>:null)}
+          {THAI_M.map((m,i)=>i+1<=new Date().getMonth()+1?<option key={i+1} value={i+1}>{m} {selYear}</option>:null)}
         </select>
         <span style={{fontSize:12,color:'#94a3b8'}}>มีข้อมูล {monthReps.length} เคส</span>
       </div>
