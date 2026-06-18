@@ -453,6 +453,15 @@ function niceMax(max,ticks=4){
   return Math.ceil(max/(s*mag))*(s*mag);
 }
 function axisTicks(min,max,count=4){const a=[];for(let i=0;i<=count;i++)a.push(min+((max-min)*i)/count);return a;}
+function niceLineTicks(lo,hi){
+  const range=hi-lo,rough=range/5;
+  const mag=Math.pow(10,Math.floor(Math.log10(rough))),norm=rough/mag;
+  let s;if(norm<=1.5)s=1;else if(norm<=3)s=2;else if(norm<=7)s=5;else s=10;
+  const step=s*mag;
+  const start=Math.ceil(lo/step)*step;
+  const a=[];for(let t=start;t<=hi+step*0.01;t=Math.round((t+step)*1e9)/1e9)a.push(t);
+  return a;
+}
 
 function Tooltip({tip}){
   if(!tip)return null;
@@ -533,7 +542,7 @@ function LineChart({categories,series,targets=[],height=300,unit='',decimals=0,y
   if(yMin==null){const mag=Math.pow(10,Math.floor(Math.log10(hi-lo)));lo=Math.floor(lo*0.97/mag)*mag;}
   if(yMax==null)hi=Math.ceil(hi*1.04);
   if(hi===lo)hi=lo+1;
-  const ticks=axisTicks(lo,hi,4);
+  const ticks=niceLineTicks(lo,hi);
   const x=i=>pad.l+(categories.length===1?iW/2:(i/(categories.length-1))*iW);
   const y=v=>pad.t+iH-((v-lo)/(hi-lo))*iH;
   const lp=data=>data.map((v,i)=>v==null?null:`${i===0||data[i-1]==null?'M':'L'}${x(i)},${y(v)}`).filter(Boolean).join(' ');
