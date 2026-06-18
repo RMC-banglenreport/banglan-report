@@ -427,23 +427,8 @@ function syncConcrete() {
     if (matData.length > 0) sbRequest('post', 'materials_daily', matData);
   }
 
-  // 3. งานรอผลิต
-  var pendingSh = ss.getSheetByName('งานรอผลิต');
-  var pendingData = [];
-  if (pendingSh) {
-    var pRows = pendingSh.getDataRange().getValues();
-    pendingData = pRows.slice(1).filter(function(r){ return r[0] && r[1] !== ''; }).map(function(r) {
-      return {
-        updated_date: fmtDate(r[0]),
-        value_m3:     Number(r[1]) || null
-      };
-    });
-    sbRequest('delete', 'pending_work', null, 'id=gte.1');
-    if (pendingData.length > 0) sbRequest('post', 'pending_work', pendingData);
-  }
-
   var now = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss');
-  var logMsg = now + ' — ผลทดสอบ: ' + concreteData.length + ' แถว, วัตถุดิบ: ' + matData.length + ' แถว, งานรอผลิต: ' + pendingData.length + ' แถว';
+  var logMsg = now + ' — ผลทดสอบ: ' + concreteData.length + ' แถว, วัตถุดิบ: ' + matData.length + ' แถว';
   PropertiesService.getScriptProperties().setProperty('SYNC_LOG', logMsg);
   try {
     SpreadsheetApp.getUi().alert('✅ Sync สำเร็จ!\n\n' + logMsg);

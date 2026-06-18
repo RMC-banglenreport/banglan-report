@@ -1,14 +1,16 @@
 // ============================================================
-// สร้าง Sheet "งานรอผลิต" ใน Spreadsheet เดิม
+// สร้าง Sheet "งานรอผลิต" ใน pile-production-data
 // วิธีใช้:
-//   1. เปิด Sheet ผลทดสอบคอนกรีต → Extensions → Apps Script
-//   2. เพิ่ม function นี้ต่อท้ายโค้ดเดิม (หรือวางแยกไฟล์ใหม่)
+//   1. เปิด Sheet pile-production-data → Extensions → Apps Script
+//   2. เพิ่ม function นี้ต่อท้ายโค้ดเดิม
 //   3. กด Run → "createPendingSheet"
-//   4. กด Sync ทันที เพื่อส่งข้อมูลไป Dashboard
+//   4. กด Sync Dashboard → Sync ทันที
 // ============================================================
 
+const PENDING_SS_ID = '16keXb-jdSY6UOk1r-ZpR4ZqIYUfu9hQK7U1x7hDCof0';
+
 function createPendingSheet() {
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var ss = SpreadsheetApp.openById(PENDING_SS_ID);
 
   // ลบ sheet เก่าถ้ามี (ป้องกัน duplicate)
   var existing = ss.getSheetByName('งานรอผลิต');
