@@ -2311,7 +2311,7 @@ window.__dataReady.then(data => {
               {label:`ปี ${thisYear}`,color:PALETTE.produced,data:thisProd},
               ...(lastProd.some(v=>v!=null)?[{label:`ปี ${lastYear}`,color:PALETTE.prev,data:lastProd,dashed:true,showLabel:true}]:[]),
             ]}
-            height={300} unit="m³" decimals={0} showValues={true} boxedLabels={true}/>
+            height={380} unit="m³" decimals={0} showValues={true} boxedLabels={true}/>
         </ChartCard>
       </div>
       <ChartCard title={`เปอร์เซ็นต์ผลิตรายเดือน — ปี ${thisYear} เทียบ ปี ${lastYear}`} subtitle="เปอร์เซ็นต์การผลิตได้จริง (เกณฑ์กำลังผลิต)" span="full">
@@ -2321,7 +2321,7 @@ window.__dataReady.then(data => {
             {label:`ปี ${thisYear}`,color:'#5a8f3c',data:thisPct},
             ...(lastPct.some(v=>v!=null)?[{label:`ปี ${lastYear}`,color:PALETTE.prev,data:lastPct,dashed:true,showLabel:true}]:[]),
           ]}
-          height={300} unit="%" decimals={1} showValues={true} boxedLabels={true}/>
+          height={380} unit="%" decimals={1} showValues={true} boxedLabels={true}/>
       </ChartCard>
     </div>;
   }
