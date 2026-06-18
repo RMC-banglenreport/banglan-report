@@ -2258,7 +2258,6 @@ window.__dataReady.then(data => {
     const curLabel=`${THAI_M[cur.m-1]} ${thisYear}`;
     const prevLabel=prev?`${THAI_M[prev.m-1]} ${lastYear}`:null;
     const kpis=[
-      {label:'คิวสั่งผลิต',val:cur.order,prev:prev?.order,unit:'m³',accent:PALETTE.order},
       {label:'คิวผลิตจริง',val:cur.produced,prev:prev?.produced,unit:'m³',accent:PALETTE.produced},
       {label:'%ผลิต',val:pct(cur),prev:prev?pct(prev):null,unit:'%',dec:1,accent:'#3f7d2b'},
       {label:'เฉลี่ยคิว/วัน',val:cur.perDay,prev:prev?.perDay,unit:'m³',dec:1,accent:'#7b61c4'},
@@ -2283,11 +2282,10 @@ window.__dataReady.then(data => {
         })}
       </div>
       <div className="grid">
-        <ChartCard title="คิวผลิตจริง vs คิวสั่ง" subtitle={`${curLabel}${prevLabel?' เทียบกับ '+prevLabel:''} • หน่วย: m³`}>
+        <ChartCard title="คิวผลิตจริง" subtitle={`${curLabel}${prevLabel?' เทียบกับ '+prevLabel:''} • หน่วย: m³`}>
           <GroupedBarChart
             categories={barCats}
             series={[
-              {label:'คิวสั่ง',color:PALETTE.order,data:prev?[cur.order,prev.order]:[cur.order]},
               {label:'คิวผลิต',color:PALETTE.produced,data:prev?[cur.produced,prev.produced]:[cur.produced]},
             ]}
             height={260} unit="m³" decimals={0}/>
