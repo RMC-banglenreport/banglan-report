@@ -2276,6 +2276,7 @@ window.__dataReady.then(data => {
     const [editId,setEditId]=useState(null);
     const [saving,setSaving]=useState(false);
     const [subTab,setSubTab]=useState('monthly');
+    const [showSubKpi,setShowSubKpi]=useState(true);
     const [pendingFiles,setPendingFiles]=useState([]);
     const [previewUrls,setPreviewUrls]=useState([]);
     const [form,setForm]=useState({title:'',report_date:'',type:'คุณภาพผลิตภัณฑ์',sub_type:'',sub_type_other:'',description:'',status:'open',fix_note:''});
@@ -2552,8 +2553,11 @@ window.__dataReady.then(data => {
             </div>
             {/* sub_type breakdown สำหรับ คุณภาพผลิตภัณฑ์ */}
             {tk.type==='คุณภาพผลิตภัณฑ์'&&subKpi.length>0&&<div style={{borderTop:'1px solid #f1f5f9',paddingTop:12,marginTop:4}}>
-              <div style={{fontSize:11,fontWeight:600,color:'#94a3b8',letterSpacing:'0.5px',marginBottom:10,textTransform:'uppercase'}}>แยกตามลักษณะปัญหา</div>
-              {subKpi.map(sk=>{
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                <div style={{fontSize:14,fontWeight:700,color:'#475569'}}>แยกตามลักษณะปัญหา</div>
+                <button onClick={()=>setShowSubKpi(v=>!v)} style={{fontSize:13,padding:'4px 14px',borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',color:'#475569',fontWeight:600}}>{showSubKpi?'ซ่อน ▲':'แสดง ▼'}</button>
+              </div>
+              {showSubKpi&&subKpi.map(sk=>{
                 const sd=sk.thisYear-sk.lastYear;
                 return<div key={sk.sub} style={{background:'#f8fafc',borderRadius:10,padding:'12px 14px',marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8}}>
                   <div>
