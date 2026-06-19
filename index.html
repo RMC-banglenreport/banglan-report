@@ -2260,6 +2260,7 @@ window.__dataReady.then(data => {
     const THAI_M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
     const THAI_M_FULL=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
     const TYPES=['คุณภาพผลิตภัณฑ์','บริการ/การจัดส่ง','ความปลอดภัย','ลูกค้าร้องเรียน','อื่นๆ'];
+    const SUB_TYPES={'คุณภาพผลิตภัณฑ์':['หัวเพลทเอียง','มิติเสาไม่ผ่าน','ลวดปลอกโผล่','เสาคด/รอยต่อแบบ','เสาร้าว/ปีกแตก','คอนกรีตมีปัญหา/เสาร้าวตอนตอก','หัวเสาเป็นโพรง','คอนกรีตบริเวณหูยกกระเทาะ','ความยาวขาด','เหล็กเสริมมีปัญหา','เขียนหน้าเสาผิด','อื่นๆ']};
     const SL={open:'รอดำเนินการ',in_progress:'อยู่ระหว่างแก้ไข',done:'แก้ไขแล้ว'};
     const SC={open:'#993C1D',in_progress:'#854F0B',done:'#3B6D11'};
     const SB={open:'#FAECE7',in_progress:'#FAEEDA',done:'#EAF3DE'};
@@ -2277,7 +2278,7 @@ window.__dataReady.then(data => {
     const [subTab,setSubTab]=useState('monthly');
     const [pendingFiles,setPendingFiles]=useState([]);
     const [previewUrls,setPreviewUrls]=useState([]);
-    const [form,setForm]=useState({title:'',report_date:'',type:'คุณภาพผลิตภัณฑ์',description:'',status:'open',fix_note:''});
+    const [form,setForm]=useState({title:'',report_date:'',type:'คุณภาพผลิตภัณฑ์',sub_type:'',description:'',status:'open',fix_note:''});
     const fileRef=React.useRef(null);
     const db=React.useMemo(()=>supabase.createClient(SUPABASE_URL,SUPABASE_KEY),[]);
 
@@ -2341,11 +2342,11 @@ window.__dataReady.then(data => {
       try{
         let repId=editId;
         if(!editId){
-          const {data,error}=await db.from('quality_reports').insert({title:form.title,customer_name:form.customer_name||null,department:form.department||null,report_date:form.report_date,type:form.type,description:form.description,status:form.status,fix_note:form.fix_note}).select().single();
+          const {data,error}=await db.from('quality_reports').insert({title:form.title,customer_name:form.customer_name||null,department:form.department||null,report_date:form.report_date,type:form.type,sub_type:form.sub_type||null,description:form.description,status:form.status,fix_note:form.fix_note}).select().single();
           if(error)throw error;
           repId=data.id;
         } else {
-          const {error}=await db.from('quality_reports').update({title:form.title,customer_name:form.customer_name||null,department:form.department||null,report_date:form.report_date,type:form.type,description:form.description,status:form.status,fix_note:form.fix_note}).eq('id',editId);
+          const {error}=await db.from('quality_reports').update({title:form.title,customer_name:form.customer_name||null,department:form.department||null,report_date:form.report_date,type:form.type,sub_type:form.sub_type||null,description:form.description,status:form.status,fix_note:form.fix_note}).eq('id',editId);
           if(error)throw error;
         }
         for(const file of pendingFiles){
@@ -2377,13 +2378,13 @@ window.__dataReady.then(data => {
     function openAdd(){
       setEditId(null);
       const n=new Date();
-      setForm({title:'',customer_name:'',department:'',report_date:n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'),type:'คุณภาพผลิตภัณฑ์',description:'',status:'open',fix_note:''});
+      setForm({title:'',customer_name:'',department:'',report_date:n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'),type:'คุณภาพผลิตภัณฑ์',sub_type:'',description:'',status:'open',fix_note:''});
       setPendingFiles([]); setPreviewUrls([]); setShowForm(true);
     }
 
     function openEdit(r){
       setEditId(r.id);
-      setForm({title:r.title,customer_name:r.customer_name||'',department:r.department||'',report_date:String(r.report_date).slice(0,10),type:r.type,description:r.description||'',status:r.status,fix_note:r.fix_note||''});
+      setForm({title:r.title,customer_name:r.customer_name||'',department:r.department||'',report_date:String(r.report_date).slice(0,10),type:r.type,sub_type:r.sub_type||'',description:r.description||'',status:r.status,fix_note:r.fix_note||''});
       setPendingFiles([]); setPreviewUrls([]); setShowForm(true);
     }
 
@@ -2474,7 +2475,7 @@ window.__dataReady.then(data => {
             <div style={{flex:1,padding:'18px 20px',minWidth:0}}>
               {/* meta tags */}
               <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:14,alignItems:'center'}}>
-                <span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:TB[r.type]||'#f1f5f9',color:TC[r.type]||'#64748b',fontWeight:600}}>{r.type}</span>
+                <span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:TB[r.type]||'#f1f5f9',color:TC[r.type]||'#64748b',fontWeight:600}}>{r.type}{r.sub_type?<span style={{fontWeight:400,opacity:0.8}}> › {r.sub_type}</span>:null}</span>
                 {r.customer_name&&<span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:'#f1f5f9',color:'#334155',fontWeight:600}}>👤 {r.customer_name}</span>}
                 {r.department&&<span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:'#eef3fc',color:'#2f5fd0',fontWeight:600}}>{r.department}</span>}
                 <span style={{fontSize:15,color:'#94a3b8',marginLeft:2}}>{fmtDate(r.report_date)}</span>
@@ -2589,10 +2590,17 @@ window.__dataReady.then(data => {
           ))}
           <div style={{marginBottom:12}}>
             <div style={{fontSize:12,color:'#64748b',marginBottom:4}}>ประเภทปัญหา</div>
-            <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))} style={{width:'100%',padding:'8px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,background:'#fff',outline:'none',fontFamily:'inherit'}}>
+            <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value,sub_type:''}))} style={{width:'100%',padding:'8px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,background:'#fff',outline:'none',fontFamily:'inherit'}}>
               {TYPES.map(t=><option key={t} value={t}>{t}</option>)}
             </select>
           </div>
+          {SUB_TYPES[form.type]&&<div style={{marginBottom:12}}>
+            <div style={{fontSize:12,color:'#64748b',marginBottom:4}}>หัวข้อย่อย</div>
+            <select value={form.sub_type} onChange={e=>setForm(f=>({...f,sub_type:e.target.value}))} style={{width:'100%',padding:'8px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,background:'#fff',outline:'none',fontFamily:'inherit'}}>
+              <option value=''>-- เลือกหัวข้อย่อย --</option>
+              {SUB_TYPES[form.type].map(s=><option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>}
           <div style={{marginBottom:12}}>
             <div style={{fontSize:12,color:'#64748b',marginBottom:4}}>รายละเอียด</div>
             <textarea value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} rows={3} style={{width:'100%',padding:'8px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,resize:'vertical',outline:'none',fontFamily:'inherit'}}/>
