@@ -2397,8 +2397,9 @@ window.__dataReady.then(data => {
     function closeForm(){setShowForm(false);setEditId(null);setPendingFiles([]);setPreviewUrls([]);}
 
     const ceYear=selYear-543;
-    const yearReps=reports.filter(r=>new Date(r.report_date).getFullYear()===ceYear&&!r.exclude_kpi);
-    const monthReps=yearReps.filter(r=>new Date(r.report_date).getMonth()+1===selMonth).sort((a,b)=>new Date(a.report_date)-new Date(b.report_date));
+    const allYearReps=reports.filter(r=>new Date(r.report_date).getFullYear()===ceYear);
+    const yearReps=allYearReps.filter(r=>!r.exclude_kpi);
+    const monthReps=allYearReps.filter(r=>new Date(r.report_date).getMonth()+1===selMonth).sort((a,b)=>new Date(a.report_date)-new Date(b.report_date));
     const prevMonthReps=reports.filter(r=>{const d=new Date(r.report_date);return d.getFullYear()===ceYear-1&&d.getMonth()+1===selMonth;});
     const cntBy=(arr,st)=>st?arr.filter(r=>r.status===st).length:arr.length;
     const activeMs=new Set(yearReps.map(r=>new Date(r.report_date).getMonth()+1));
