@@ -2436,7 +2436,7 @@ window.__dataReady.then(data => {
         <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 18px',background:'#2f5fd0',color:'#fff',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer'}}>+ เพิ่มรายงานใหม่</button>
       </div>
       <div style={{display:'flex',gap:0,marginBottom:20,borderBottom:'2px solid #e2e8f0'}}>
-        {[['monthly','รายงานเดือนล่าสุด'],['kpi','KPI เทียบประเภทปัญหา']].map(([id,label])=>(
+        {[['monthly','รายงานประจำเดือน'],['kpi','KPI เทียบประเภทปัญหา']].map(([id,label])=>(
           <button key={id} onClick={()=>setSubTab(id)} style={{padding:'8px 20px',border:'none',borderBottom:subTab===id?'2px solid #2f5fd0':'2px solid transparent',marginBottom:-2,background:'none',fontSize:14,fontWeight:subTab===id?700:400,color:subTab===id?'#2f5fd0':'#94a3b8',cursor:'pointer'}}>{label}</button>
         ))}
       </div>
