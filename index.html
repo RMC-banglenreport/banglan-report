@@ -2490,7 +2490,7 @@ window.__dataReady.then(data => {
             {(imgMap[r.id]||[]).length>0&&<div style={{borderTop:'1px solid #e2e8f0',padding:'14px 16px',display:'flex',flexWrap:'wrap',gap:10,background:'#fafafa'}}>
               {(imgMap[r.id]||[]).map((url,ii)=>(
                 <div key={ii} style={{position:'relative'}}>
-                  <img src={url} alt="รูปประกอบ" style={{width:200,height:160,objectFit:'cover',borderRadius:10,border:'1px solid #e2e8f0',cursor:'pointer',display:'block'}} onClick={()=>window.open(url,'_blank')}/>
+                  <img src={url} alt="รูปประกอบ" style={{width:320,height:240,objectFit:'cover',borderRadius:10,border:'1px solid #e2e8f0',cursor:'pointer',display:'block'}} onClick={()=>window.open(url,'_blank')}/>
                   <button onClick={()=>deleteImage(r.id,url)} style={{position:'absolute',top:-6,right:-6,width:22,height:22,borderRadius:'50%',background:'#ef4444',color:'#fff',border:'none',cursor:'pointer',fontSize:13,lineHeight:'22px',padding:0,textAlign:'center'}}>×</button>
                 </div>
               ))}
