@@ -1941,27 +1941,38 @@ window.__dataReady.then(data => {
     const [materials,setMaterials]=useState([]);
 
     useEffect(()=>{
-      const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-      Promise.all([
-        db.from('concrete_results').select('*').order('sample_date'),
-        db.from('materials_daily').select('*').order('id')
-      ]).then(([cr,mr])=>{
-        const data=cr.data||[];
-        const mats=mr.data||[];
-        setRows(data);
-        setMaterials(mats);
-        const dates=data.map(r=>String(r.sample_date||'').slice(0,10)).filter(Boolean).sort();
-        if(dates.length){
-          const last=dates[dates.length-1];
-          const day7dates=data.filter(r=>Number(r.age_days||0)===7).map(r=>String(r.sample_date||'').slice(0,10)).filter(Boolean).sort();
-          const lastDay7=day7dates.length?day7dates[day7dates.length-1]:last;
-          setSelSample(lastDay7);
-          const d=new Date(lastDay7); d.setDate(d.getDate()-9);
-          setDateTo(lastDay7);
-          setDateFrom(d.toISOString().slice(0,10));
-        }
-        setLoading(false);
-      }).catch(e=>{setErr('เชื่อมต่อไม่ได้: '+e.message);setLoading(false);});
+      fetch(CONCRETE_URL)
+        .then(r=>r.json())
+        .then(res=>{
+          const raw=res.data||[];
+          const data=raw.map(r=>({
+            sample_date: String(r['วันที่เก็บตัวอย่าง']||'').slice(0,10),
+            test_date:   String(r['วันที่ทดสอบ']||'').slice(0,10),
+            age_days:    Number(r['อายุ(วัน)']||r['อายุ (วัน)']||0),
+            formula_name:String(r['ชื่อสูตร']||''),
+            cube_size:   String(r['ขนาด cube']||''),
+            result1_kn:  Number(r['ลูก1(kN)']||0),
+            result2_kn:  Number(r['ลูก2(kN)']||0),
+            result3_kn:  Number(r['ลูก3(kN)']||0),
+            avg_kn:      Number(r['เฉลี่ย kN']||0),
+            avg_mpa:     Number(r['เฉลี่ย MPa']||0),
+            avg_ksc:     Number(r['เฉลี่ย KSC']||0),
+          }));
+          const mats=res.materials||[];
+          setRows(data);
+          setMaterials(mats);
+          const dates=data.map(r=>String(r.sample_date||'').slice(0,10)).filter(Boolean).sort();
+          if(dates.length){
+            const last=dates[dates.length-1];
+            const day7dates=data.filter(r=>Number(r.age_days||0)===7).map(r=>String(r.sample_date||'').slice(0,10)).filter(Boolean).sort();
+            const lastDay7=day7dates.length?day7dates[day7dates.length-1]:last;
+            setSelSample(lastDay7);
+            const d=new Date(lastDay7); d.setDate(d.getDate()-9);
+            setDateTo(lastDay7);
+            setDateFrom(d.toISOString().slice(0,10));
+          }
+          setLoading(false);
+        }).catch(e=>{setErr('เชื่อมต่อไม่ได้: '+e.message);setLoading(false);});
     },[]);
 
     if(loading) return <div style={{padding:40,textAlign:'center',color:'#888'}}>กำลังโหลด...</div>;
