@@ -193,8 +193,8 @@ function importFromOldSheet() {
 // ============================================================
 // Sync ข้อมูลไป Supabase Dashboard
 // ============================================================
-var SUPABASE_URL = 'https://jxkuufqayjjsnpcbnjnf.supabase.co';
-var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4a3V1ZnFheWpqc25wY2Juam5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MDM1MzgsImV4cCI6MjA1ODQ3OTUzOH0.IrE5QEMmJO-y1gSQ03DoPqjW2Y10aJv3GXbIp-b0nM8';
+var SUPABASE_URL = 'https://npxzerdirspwunuckcqr.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5weHplcmRpcnNwd3VudWNrY3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMjUxMjIsImV4cCI6MjA5NTcwMTEyMn0.4C1MucMeqPozXSfErLM44at7dykfzfFQvpVnoqmrMQI';
 
 function syncConcrete() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
