@@ -2488,10 +2488,14 @@ window.__dataReady.then(data => {
 
       {subTab==='monthly'&&<div>
       {prevSubTab&&<button onClick={()=>{setSubTab(prevSubTab);setPrevSubTab(null);}} style={{display:'flex',alignItems:'center',gap:6,marginBottom:14,padding:'6px 14px',border:'1px solid #e2e8f0',borderRadius:8,background:'#f8fafc',cursor:'pointer',fontSize:13,fontWeight:600,color:'#2f5fd0'}}>← กลับ KPI</button>}
-      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <label style={{fontSize:13,color:'#64748b',fontWeight:500,whiteSpace:'nowrap'}}>เลือกปี:</label>
+        <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSelMonth(1);}} style={{padding:'7px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,background:'#fff',outline:'none',fontFamily:'inherit',cursor:'pointer',color:'#1e293b',fontWeight:600}}>
+          {[...new Set(reports.map(r=>new Date(r.report_date).getFullYear()+543))].sort((a,b)=>b-a).map(y=><option key={y} value={y}>ปี {y}</option>)}
+        </select>
         <label style={{fontSize:13,color:'#64748b',fontWeight:500,whiteSpace:'nowrap'}}>เลือกเดือน:</label>
         <select value={selMonth} onChange={e=>setSelMonth(Number(e.target.value))} style={{padding:'7px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,background:'#fff',outline:'none',fontFamily:'inherit',cursor:'pointer',color:'#1e293b',fontWeight:600}}>
-          {THAI_M.map((m,i)=>i+1<=new Date().getMonth()+1?<option key={i+1} value={i+1}>{m} {selYear}</option>:null)}
+          {THAI_M.map((m,i)=><option key={i+1} value={i+1}>{m} {selYear}</option>)}
         </select>
         <span style={{fontSize:12,color:'#94a3b8'}}>มีข้อมูล {monthReps.length} เคส</span>
       </div>
