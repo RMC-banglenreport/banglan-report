@@ -2577,7 +2577,7 @@ window.__dataReady.then(data => {
                   <span style={{fontSize:52,fontWeight:900,color:'#1e293b',lineHeight:1,cursor:'pointer',textDecoration:'underline dotted'}} onClick={()=>{const filtered=st?yearReps.filter(r=>r.status===st):yearReps;setKpiModal({title:`${lbl} ปี ${selYear}`,rows:filtered});}}>{a}</span>
                   <span style={{fontSize:15,color:'#94a3b8'}}>ปี {selYear}</span>
                 </div>
-                <div style={{fontSize:15,color:'#94a3b8',marginBottom:8}}>ปีก่อน: <span style={{fontWeight:700,color:'#64748b'}}>{b}</span> เคส</div>
+                <div style={{fontSize:15,color:'#94a3b8',marginBottom:8}}>ปีก่อน: <span style={{fontWeight:700,color:'#64748b',cursor:'pointer',textDecoration:'underline dotted'}} onClick={()=>{const filtered=st?lastYearReps.filter(r=>r.status===st):lastYearReps;setKpiModal({title:`${lbl} ปี ${selYear-1}`,rows:filtered});}}>{b}</span> เคส</div>
                 {diffBadge(a,b)}
               </div>;
             })}
@@ -2595,7 +2595,7 @@ window.__dataReady.then(data => {
                 <div style={{marginTop:6,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
                   <span style={{fontSize:40,fontWeight:800,color:'#1e293b',lineHeight:1,cursor:'pointer',textDecoration:'underline dotted'}} onClick={()=>{setKpiReturnId(`kpi-type-${tk.type}`);setKpiModal({title:`${tk.type} ปี ${selYear}`,rows:yearReps.filter(r=>r.type===tk.type)});}}>{tk.thisYear}</span>
                   <span style={{fontSize:15,color:'#94a3b8'}}>ปีนี้</span>
-                  <span style={{fontSize:16,color:'#64748b',marginLeft:4}}>ปีก่อน: {tk.lastYear}</span>
+                  <span style={{fontSize:16,color:'#64748b',marginLeft:4}}>ปีก่อน: <span style={{cursor:'pointer',textDecoration:'underline dotted'}} onClick={()=>{setKpiReturnId(`kpi-type-${tk.type}`);setKpiModal({title:`${tk.type} ปี ${selYear-1}`,rows:lastYearReps.filter(r=>r.type===tk.type)});}}>{tk.lastYear}</span></span>
                   <span style={{marginLeft:4}}>{d===0?<span style={{fontSize:15,color:'#94a3b8'}}>เท่ากับปีก่อน</span>:<span style={{fontSize:20,fontWeight:800,color:d>0?'#993C1D':'#3B6D11'}}>{d>0?'▲ +'+d:'▼ '+d}</span>}</span>
                 </div>
               </div>
@@ -2614,7 +2614,7 @@ window.__dataReady.then(data => {
                     <div style={{display:'flex',alignItems:'baseline',gap:12}}>
                       <span style={{fontSize:36,fontWeight:800,color:'#185FA5',lineHeight:1,cursor:'pointer',textDecoration:'underline dotted'}} onClick={()=>{setKpiReturnId(`kpi-sub-${sk.sub}`);setKpiModal({title:`${sk.sub} ปี ${selYear}`,rows:qualityRepsY.filter(r=>(r.sub_type||'ไม่ระบุ')===sk.sub)});}}>{sk.thisYear}</span>
                       <span style={{fontSize:15,fontWeight:600,color:'#185FA5'}}>ปี {selYear}</span>
-                      <span style={{fontSize:24,fontWeight:700,color:'#94a3b8',marginLeft:8,lineHeight:1}}>{sk.lastYear}</span>
+                      <span style={{fontSize:24,fontWeight:700,color:'#94a3b8',marginLeft:8,lineHeight:1,cursor:'pointer',textDecoration:'underline dotted'}} onClick={()=>{setKpiReturnId(`kpi-sub-${sk.sub}`);setKpiModal({title:`${sk.sub} ปี ${selYear-1}`,rows:qualityRepsLY.filter(r=>(r.sub_type||'ไม่ระบุ')===sk.sub)});}}>{sk.lastYear}</span>
                       <span style={{fontSize:15,fontWeight:600,color:'#94a3b8'}}>ปี {selYear-1}</span>
                     </div>
                   </div>
