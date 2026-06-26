@@ -1449,7 +1449,7 @@ window.__dataReady.then(data => {
             ))}
           </div>}
           {/* วิเคราะห์แยกราย period */}
-          {periodAnalysis.map(({cat,idx,prevCat,yoyUps,yoyGoods,qoqUps,qoqGoods},pi)=>(
+          {[...periodAnalysis].reverse().map(({cat,idx,prevCat,yoyUps,yoyGoods,qoqUps,qoqGoods},pi)=>(
             <div key={pi} style={{marginTop:14,border:'1px solid #e2e8f0',borderRadius:12,overflow:'hidden'}}>
               <div style={{background:'#f8fafc',padding:'10px 16px',fontWeight:700,fontSize:14,color:'#334155',borderBottom:'1px solid #e2e8f0'}}>
                 📊 {periodLabel} <span style={{color:'#2f5fd0'}}>{cat}</span> — การวิเคราะห์สาเหตุ
