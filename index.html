@@ -3161,20 +3161,21 @@ window.__dataReady.then(data => {
           const lo=0, rawHi=allV.length?Math.max(...allV):1;
           const {ticks,hi}=niceLineTicks(lo,rawHi);
           const yp=v=>padT+iH-((v-lo)/(hi-lo))*iH;
-          const gap=4, barW=Math.max(4,(colW-gap*3)/2);
+          const outerPad=colW*0.18, innerGap=6;
+          const barW=Math.max(4,(colW-outerPad*2-innerGap)/2);
           return <div ref={ref} style={{marginTop:4}}>
             <svg width={W||'100%'} height={CHART_H} style={{display:'block',overflow:'visible'}}>
-              {ticks.map((t,i)=><g key={i}><line x1={LCOL} x2={W} y1={yp(t)} y2={yp(t)} stroke="#e2e8f0"/><text x={LCOL-6} y={yp(t)+4} textAnchor="end" style={{fontSize:10,fill:'#94a3b8',fontFamily:'var(--num)'}}>{t}</text></g>)}
+              {ticks.map((t,ti)=><g key={ti}><line x1={LCOL} x2={W} y1={yp(t)} y2={yp(t)} stroke="#e2e8f0"/><text x={LCOL-6} y={yp(t)+4} textAnchor="end" style={{fontSize:10,fill:'#94a3b8',fontFamily:'var(--num)'}}>{t}</text></g>)}
               {colW>0&&cats.map((_,i)=>{
-                const cx=LCOL+i*colW+colW/2;
-                const x1=cx-barW-gap/2, x2=cx+gap/2;
+                const gx=LCOL+i*colW+outerPad;
+                const x1=gx, x2=gx+barW+innerGap;
                 const cv=curVals[i], pv=prevVals[i];
-                const bH=(v)=>Math.max(2,iH*((v-lo)/(hi-lo)));
+                const bH=v=>Math.max(2,iH*((v-lo)/(hi-lo)));
                 return <g key={i}>
-                  {pv!=null&&<rect x={x1} y={yp(pv)} width={barW} height={bH(pv)} fill="#94a3b8" rx={2} opacity={0.8}/>}
-                  {cv!=null&&<rect x={x2} y={yp(cv)} width={barW} height={bH(cv)} fill="#2f5fd0" rx={2}/>}
-                  {pv!=null&&<text x={x1+barW/2} y={yp(pv)-3} textAnchor="middle" style={{fontSize:10,fill:'#94a3b8',fontFamily:'var(--num)'}}>{pv}</text>}
-                  {cv!=null&&<text x={x2+barW/2} y={yp(cv)-3} textAnchor="middle" style={{fontSize:10,fill:'#2f5fd0',fontWeight:700,fontFamily:'var(--num)'}}>{cv}</text>}
+                  {pv!=null&&<rect x={x1} y={yp(pv)} width={barW} height={bH(pv)} fill="#94a3b8" rx={3} opacity={0.75}/>}
+                  {cv!=null&&<rect x={x2} y={yp(cv)} width={barW} height={bH(cv)} fill="#2f5fd0" rx={3}/>}
+                  {pv!=null&&<text x={x1+barW/2} y={yp(pv)-4} textAnchor="middle" style={{fontSize:10,fill:'#64748b',fontFamily:'var(--num)'}}>{pv}</text>}
+                  {cv!=null&&<text x={x2+barW/2} y={yp(cv)-4} textAnchor="middle" style={{fontSize:10,fill:'#2f5fd0',fontWeight:700,fontFamily:'var(--num)'}}>{cv}</text>}
                 </g>;
               })}
             </svg>
