@@ -3219,41 +3219,45 @@ window.__dataReady.then(data => {
             </table>
           </div>
           {/* กล่องวิเคราะห์รวม */}
-          {ups.length>0&&<div style={{marginTop:16,background:'#fff5f5',border:'1px solid #fecaca',borderRadius:12,padding:'14px 18px'}}>
-            <div style={{fontSize:14,fontWeight:700,color:'#991b1b',marginBottom:10}}>⚠ ข้อสังเกตผิดปกติ — เพิ่มสูงขึ้น</div>
-            {ups.map((a,i)=><div key={i} style={{marginBottom:8,paddingLeft:8,borderLeft:'3px solid #c0392b',fontSize:13,color:'#7f1d1d'}}>
-              {a.type==='spike'?<>📈 <b>{a.cat}</b> สูงผิดปกติ ({a.cur} เคส) เกินค่าเฉลี่ย {a.diff.toFixed(1)} เคส</>
-              :<>🔺 <b>{a.cat}</b> เพิ่มขึ้น <b>{a.pct.toFixed(1)}%</b> ({a.prev} → {a.cur} เคส)</>}
+          {ups.length>0&&<div style={{marginTop:16,background:'#fff5f5',border:'1px solid #fecaca',borderRadius:14,padding:'16px 20px'}}>
+            <div style={{fontSize:15,fontWeight:700,color:'#991b1b',marginBottom:14}}>⚠ ข้อสังเกตผิดปกติ — เพิ่มสูงขึ้น</div>
+            {ups.map((a,i)=><div key={i} style={{marginBottom:14,paddingLeft:12,borderLeft:'4px solid #c0392b'}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#7f1d1d',marginBottom:6}}>
+                {a.type==='spike'?<>📈 <b>{a.cat}</b> สูงผิดปกติ ({a.cur} เคส) เกินค่าเฉลี่ย {a.diff.toFixed(1)} เคส</>
+                :<>🔺 {a.cat} เพิ่มขึ้น {a.pct.toFixed(1)}% &nbsp;<span style={{fontWeight:400,fontSize:13}}>({a.prev} → {a.cur} เคส)</span></>}
+              </div>
               {tType==='__all__'&&a.breakdown&&a.breakdown.filter(b=>b.diff>0||b.prev===0&&b.cur>0).map((b,j)=>(
-                <div key={j} style={{fontSize:12,color:'#991b1b',paddingLeft:12,marginTop:2}}>
-                  {b.prev===0?<>🆕 {b.type}: {b.cur} เคส (ใหม่)</>:<>↑ {b.type}: {b.prev}→{b.cur} เคส (+{b.diff})</>}
+                <div key={j} style={{fontSize:13,color:'#991b1b',paddingLeft:12,marginBottom:4,display:'flex',flexDirection:'column',gap:3}}>
+                  <span>{b.prev===0?<>🆕 <b>{b.type}</b>: {b.cur} เคส (ใหม่)</>:<>↑ <b>{b.type}</b>: {b.prev} → {b.cur} เคส (+{b.diff})</>}</span>
                   {b.subBk&&b.subBk.filter(s=>s.diff>0||s.prev===0&&s.cur>0).map((s,si)=>(
-                    <div key={si} style={{paddingLeft:10,fontSize:11,color:'#7f1d1d',marginTop:1}}>• {s.sub}: {s.prev}→{s.cur} เคส</div>
+                    <span key={si} style={{paddingLeft:14,fontSize:12,color:'#7f1d1d'}}>• {s.sub}: {s.prev} → {s.cur} เคส</span>
                   ))}
                 </div>
               ))}
               {tType!=='__all__'&&a.breakdown&&a.breakdown.flatMap(b=>b.subBk||[]).filter(s=>s.diff>0||s.prev===0&&s.cur>0).sort((x,y)=>y.diff-x.diff).map((s,j)=>(
-                <div key={j} style={{fontSize:12,color:'#991b1b',paddingLeft:12,marginTop:2}}>
-                  {s.prev===0?<>🆕 {s.sub}: {s.cur} เคส (ใหม่)</>:<>↑ {s.sub}: {s.prev}→{s.cur} เคส (+{s.diff})</>}
+                <div key={j} style={{fontSize:13,color:'#991b1b',paddingLeft:12,marginBottom:4}}>
+                  {s.prev===0?<>🆕 <b>{s.sub}</b>: {s.cur} เคส (ใหม่)</>:<>↑ <b>{s.sub}</b>: {s.prev} → {s.cur} เคส (+{s.diff})</>}
                 </div>
               ))}
             </div>)}
           </div>}
-          {goods.length>0&&<div style={{marginTop:12,background:'#f0fdf4',border:'1px solid #86efac',borderRadius:12,padding:'14px 18px'}}>
-            <div style={{fontSize:14,fontWeight:700,color:'#14532d',marginBottom:10}}>🏆 ทำได้ดี — ลดลง</div>
-            {goods.map((a,i)=><div key={i} style={{marginBottom:8,paddingLeft:8,borderLeft:'3px solid #16a34a',fontSize:13,color:'#166534'}}>
-              ✅ {praiseTexts[i%praiseTexts.length](a.cat,a.pct)} ({a.prev} → {a.cur} เคส)
+          {goods.length>0&&<div style={{marginTop:12,background:'#f0fdf4',border:'1px solid #86efac',borderRadius:14,padding:'16px 20px'}}>
+            <div style={{fontSize:15,fontWeight:700,color:'#14532d',marginBottom:14}}>🏆 ทำได้ดี — ลดลง</div>
+            {goods.map((a,i)=><div key={i} style={{marginBottom:14,paddingLeft:12,borderLeft:'4px solid #16a34a'}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#166534',marginBottom:6}}>
+                ✅ {praiseTexts[i%praiseTexts.length](a.cat,a.pct)} &nbsp;<span style={{fontWeight:400,fontSize:13}}>({a.prev} → {a.cur} เคส)</span>
+              </div>
               {tType==='__all__'&&a.breakdown&&a.breakdown.filter(b=>b.diff<0).map((b,j)=>(
-                <div key={j} style={{fontSize:12,color:'#166534',paddingLeft:12,marginTop:2}}>
-                  ↓ {b.type}: {b.prev}→{b.cur} เคส ({b.diff})
+                <div key={j} style={{fontSize:13,color:'#166534',paddingLeft:12,marginBottom:4,display:'flex',flexDirection:'column',gap:3}}>
+                  <span>↓ <b>{b.type}</b>: {b.prev} → {b.cur} เคส ({b.diff})</span>
                   {b.subBk&&b.subBk.filter(s=>s.diff<0).map((s,si)=>(
-                    <div key={si} style={{paddingLeft:10,fontSize:11,color:'#166534',marginTop:1}}>• {s.sub}: {s.prev}→{s.cur} เคส</div>
+                    <span key={si} style={{paddingLeft:14,fontSize:12,color:'#166534'}}>• {s.sub}: {s.prev} → {s.cur} เคส</span>
                   ))}
                 </div>
               ))}
               {tType!=='__all__'&&a.breakdown&&a.breakdown.flatMap(b=>b.subBk||[]).filter(s=>s.diff<0).sort((x,y)=>x.diff-y.diff).map((s,j)=>(
-                <div key={j} style={{fontSize:12,color:'#166534',paddingLeft:12,marginTop:2}}>
-                  ↓ {s.sub}: {s.prev}→{s.cur} เคส ({s.diff})
+                <div key={j} style={{fontSize:13,color:'#166534',paddingLeft:12,marginBottom:4}}>
+                  ↓ <b>{s.sub}</b>: {s.prev} → {s.cur} เคส ({s.diff})
                 </div>
               ))}
             </div>)}
