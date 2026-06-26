@@ -3151,25 +3151,32 @@ window.__dataReady.then(data => {
             ))}
           </div>
         ));
-        // chart component (proper component so useMeasure is valid)
+        // chart component — grouped bar chart
         const LCOL=100,CHART_H=200;
-        function RepTrendChart({curVals,prevVals,cats}){
+        function RepTrendChart({curVals,prevVals,cats,curYear,prevYear}){
           const [ref,W]=useMeasure();
           const n=cats.length, colW=W>0?(W-LCOL)/n:0;
-          const padT=16,padB=8,iH=CHART_H-padT-padB;
+          const padT=20,padB=8,iH=CHART_H-padT-padB;
           const allV=[...curVals,...prevVals].filter(v=>v!=null&&v>0);
           const lo=0, rawHi=allV.length?Math.max(...allV):1;
           const {ticks,hi}=niceLineTicks(lo,rawHi);
-          const xp=idx=>LCOL+(idx+0.5)*colW;
           const yp=v=>padT+iH-((v-lo)/(hi-lo))*iH;
-          const linePath=(data,color,dashed)=>{let d='',s=false;data.forEach((v,i)=>{if(v==null)return;d+=s?`L${xp(i)},${yp(v)}`:`M${xp(i)},${yp(v)}`;s=true;});return d?<path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeDasharray={dashed?'7,4':'none'}/>:null;};
+          const gap=4, barW=Math.max(4,(colW-gap*3)/2);
           return <div ref={ref} style={{marginTop:4}}>
             <svg width={W||'100%'} height={CHART_H} style={{display:'block',overflow:'visible'}}>
               {ticks.map((t,i)=><g key={i}><line x1={LCOL} x2={W} y1={yp(t)} y2={yp(t)} stroke="#e2e8f0"/><text x={LCOL-6} y={yp(t)+4} textAnchor="end" style={{fontSize:10,fill:'#94a3b8',fontFamily:'var(--num)'}}>{t}</text></g>)}
-              {colW>0&&linePath(prevVals,'#94a3b8',true)}
-              {colW>0&&linePath(curVals,'#2f5fd0',false)}
-              {colW>0&&curVals.map((v,i)=>v!=null&&<circle key={i} cx={xp(i)} cy={yp(v)} r={4} fill="white" stroke="#2f5fd0" strokeWidth="2"/>)}
-              {colW>0&&prevVals.map((v,i)=>v!=null&&<circle key={i} cx={xp(i)} cy={yp(v)} r={4} fill="white" stroke="#94a3b8" strokeWidth="2"/>)}
+              {colW>0&&cats.map((_,i)=>{
+                const cx=LCOL+i*colW+colW/2;
+                const x1=cx-barW-gap/2, x2=cx+gap/2;
+                const cv=curVals[i], pv=prevVals[i];
+                const bH=(v)=>Math.max(2,iH*((v-lo)/(hi-lo)));
+                return <g key={i}>
+                  {pv!=null&&<rect x={x1} y={yp(pv)} width={barW} height={bH(pv)} fill="#94a3b8" rx={2} opacity={0.8}/>}
+                  {cv!=null&&<rect x={x2} y={yp(cv)} width={barW} height={bH(cv)} fill="#2f5fd0" rx={2}/>}
+                  {pv!=null&&<text x={x1+barW/2} y={yp(pv)-3} textAnchor="middle" style={{fontSize:10,fill:'#94a3b8',fontFamily:'var(--num)'}}>{pv}</text>}
+                  {cv!=null&&<text x={x2+barW/2} y={yp(cv)-3} textAnchor="middle" style={{fontSize:10,fill:'#2f5fd0',fontWeight:700,fontFamily:'var(--num)'}}>{cv}</text>}
+                </g>;
+              })}
             </svg>
           </div>;
         }
