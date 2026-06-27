@@ -4135,12 +4135,12 @@ window.__dataReady.then(data => {
 
       {/* Raft view — table layout */}
       {dept==='raft'&&<div style={{overflowX:'auto'}}>
-        <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px rgba(0,0,0,.07)'}}>
+        <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px rgba(0,0,0,.07)',tableLayout:'fixed'}}>
           <thead>
             <tr style={{background:'#0f766e'}}>
-              <th style={{padding:'12px 18px',textAlign:'left',fontSize:14,fontWeight:700,color:'#fff',whiteSpace:'nowrap',minWidth:90}}>แพ</th>
-              {RAFT_PARTS.map(p=><th key={p} style={{padding:'12px 10px',fontSize:13,fontWeight:700,color:'#fff',textAlign:'center',whiteSpace:'nowrap'}}>{p}</th>)}
-              <th style={{padding:'12px 14px',fontSize:13,fontWeight:700,color:'#fff',textAlign:'center',whiteSpace:'nowrap'}}>สถานะ</th>
+              <th style={{padding:'12px 8px',textAlign:'left',fontSize:14,fontWeight:700,color:'#fff',width:'9%'}}>แพ</th>
+              {RAFT_PARTS.map(p=><th key={p} style={{padding:'12px 4px',fontSize:13,fontWeight:700,color:'#fff',textAlign:'center',width:'8%'}}>{p}</th>)}
+              <th style={{padding:'12px 8px',fontSize:13,fontWeight:700,color:'#fff',textAlign:'center',width:'9%'}}>สถานะ</th>
             </tr>
           </thead>
           <tbody>
