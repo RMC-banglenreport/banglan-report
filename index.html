@@ -4251,7 +4251,15 @@ window.__dataReady.then(data => {
                 {RAFT_PARTS.map(part=>{
                   const bad=blocked||getRaftStatus(num,part)==='bad';
                   return <td key={part} style={{padding:'8px 4px',textAlign:'center'}}>
-                    <button onClick={()=>{ if(!bad&&!blocked) openRaftRepair(num,part); }} title={waiting?'รอติดตั้งแพ':changing?'กำลังเปลี่ยนแพ':bad?'รอซ่อม — ยืนยันเสร็จจากฝ่ายผลิต':'กดเพื่อสร้างงานซ่อม'} style={{width:34,height:34,borderRadius:8,border:`1.5px solid ${bad?'#fca5a5':'#86efac'}`,background:bad?'#fef2f2':'#f0fdf4',cursor:'default',fontSize:17,padding:0,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>
+                    <button onClick={()=>{
+                      if(!bad&&!blocked){ openRaftRepair(num,part); return; }
+                      if(bad&&!blocked){
+                        const hasTask=tasks.some(t=>t.status!=='done'&&t.title===`ซ่อมแพที่ ${num} — ${part}`);
+                        if(!hasTask&&confirm(`ไม่มีงานซ่อมค้างอยู่ — เคลียร์สีแดงแพที่ ${num} (${part})?`)){
+                          setRaftData(prev=>{ const next={...prev}; delete next[`${num}__${part}`]; localStorage.setItem(RAFT_KEY,JSON.stringify(next)); return next; });
+                        }
+                      }
+                    }} title={waiting?'รอติดตั้งแพ':changing?'กำลังเปลี่ยนแพ':bad?'รอซ่อม':'กดเพื่อสร้างงานซ่อม'} style={{width:34,height:34,borderRadius:8,border:`1.5px solid ${bad?'#fca5a5':'#86efac'}`,background:bad?'#fef2f2':'#f0fdf4',cursor:bad&&!blocked&&!waiting?'pointer':'default',fontSize:17,padding:0,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>
                       {bad?'🔴':'🟢'}
                     </button>
                   </td>;
