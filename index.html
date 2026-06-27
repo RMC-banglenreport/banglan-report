@@ -4053,35 +4053,9 @@ window.__dataReady.then(data => {
     const typeInfo = id => WT_TYPES.find(x=>x.id===id)||WT_TYPES[0];
     const priInfo  = id => WT_PRI.find(x=>x.id===id)||WT_PRI[2];
 
-    const TaskCard = ({t})=>(
-      <div style={{background:'#fff',border:'1.5px solid #e2e8f0',borderRadius:12,padding:'12px 14px',marginBottom:10,boxShadow:'0 1px 4px rgba(0,0,0,.06)',cursor:'pointer'}} onClick={()=>openEdit(t)}>
-        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:6,marginBottom:6}}>
-          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',lineHeight:1.4,flex:1}}>{t.title}</div>
-          <button onClick={e=>{e.stopPropagation();deleteTask(t.id);}} style={{flexShrink:0,background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontSize:14,lineHeight:1}}>✕</button>
-        </div>
-        <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>
-          <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:10,background:typeInfo(t.type).bg,color:typeInfo(t.type).color}}>{typeInfo(t.type).label}</span>
-          <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:10,background:'#f8fafc',color:priInfo(t.priority).color,border:'1px solid '+priInfo(t.priority).color}}>{priInfo(t.priority).label}</span>
-        </div>
-        {t.note&&<div style={{fontSize:11,color:'#64748b',marginBottom:8,lineHeight:1.5}}>{t.note}</div>}
-        <div style={{marginBottom:6}}>
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#64748b',marginBottom:3}}>
-            <span>ความคืบหน้า</span><span style={{fontWeight:700,color:'#0f766e'}}>{t.pct||0}%</span>
-          </div>
-          <div style={{height:6,background:'#e2e8f0',borderRadius:3,overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
-            <div style={{height:'100%',borderRadius:3,background:t.pct>=100?'#16a34a':t.pct>=50?'#0f766e':'#0369a1',width:`${t.pct||0}%`,transition:'width .3s'}}/>
-          </div>
-        </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:6}}>
-          {t.due&&<span style={{fontSize:10,color:'#64748b'}}>📅 {t.due}</span>}
-          <div style={{display:'flex',gap:4,marginLeft:'auto'}} onClick={e=>e.stopPropagation()}>
-            {WT_STATUS.filter(s=>s.id!==t.status).map(s=>(
-              <button key={s.id} onClick={()=>setStatus(t.id,s.id)} style={{fontSize:10,padding:'3px 8px',borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',color:'#334155',cursor:'pointer'}}>{s.label}</button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    const priOrder = {urgent:0,high:1,normal:2};
+    const statusInfo = {todo:{label:'รอดำเนินการ',color:'#dc2626',bg:'#fef2f2'},doing:{label:'กำลังดำเนินการ',color:'#d97706',bg:'#fffbeb'},done:{label:'เสร็จแล้ว',color:'#16a34a',bg:'#f0fdf4'}};
+    const sortedFiltered = [...filtered].sort((a,b)=>(priOrder[a.priority]??2)-(priOrder[b.priority]??2));
 
     return <div style={{padding:'20px 24px',minHeight:600}}>
       {showForm&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
@@ -4132,19 +4106,41 @@ window.__dataReady.then(data => {
         ))}
       </div>
 
-      {/* Kanban */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14}}>
-        {WT_STATUS.map(s=>{
-          const cards=byStatus(s.id);
-          const hdr={todo:{bg:'#fef2f2',c:'#dc2626',icon:'📋'},doing:{bg:'#fffbeb',c:'#d97706',icon:'⚙️'},done:{bg:'#f0fdf4',c:'#16a34a',icon:'✅'}}[s.id];
-          return <div key={s.id} style={{background:'#f8fafc',borderRadius:14,padding:'12px 12px 4px',minHeight:200}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,background:hdr.bg,borderRadius:10,padding:'8px 12px'}}>
-              <span style={{fontSize:16}}>{hdr.icon}</span>
-              <span style={{fontWeight:700,fontSize:14,color:hdr.c}}>{s.label}</span>
-              <span style={{marginLeft:'auto',fontSize:12,fontWeight:700,color:hdr.c,background:'#fff',borderRadius:10,padding:'1px 8px'}}>{cards.length}</span>
+      {/* Task list */}
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+        {sortedFiltered.length===0&&<div style={{textAlign:'center',color:'#94a3b8',fontSize:14,padding:'48px 0'}}>ยังไม่มีงาน — กด "+ เพิ่มงาน" เพื่อเริ่ม</div>}
+        {sortedFiltered.map(t=>{
+          const si=statusInfo[t.status]||statusInfo.todo;
+          const pi=priInfo(t.priority);
+          return <div key={t.id} style={{background:'#fff',border:'1.5px solid #e2e8f0',borderRadius:14,padding:'14px 18px',boxShadow:'0 1px 4px rgba(0,0,0,.05)',cursor:'pointer',borderLeft:`4px solid ${pi.color}`}} onClick={()=>openEdit(t)}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              {/* Left: title + badges */}
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:5}}>{t.title}</div>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+                  <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:10,background:pi.color+'18',color:pi.color}}>{pi.label}</span>
+                  {t.type&&<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#f1f5f9',color:'#475569'}}>{t.type}</span>}
+                  {t.due&&<span style={{fontSize:11,color:'#94a3b8'}}>📅 {t.due}</span>}
+                </div>
+                {t.note&&<div style={{fontSize:12,color:'#64748b',marginTop:5,lineHeight:1.5}}>{t.note}</div>}
+                <div style={{marginTop:8,display:'flex',alignItems:'center',gap:8}} onClick={e=>e.stopPropagation()}>
+                  <div style={{flex:1,height:6,background:'#e2e8f0',borderRadius:3,overflow:'hidden'}}>
+                    <div style={{height:'100%',borderRadius:3,background:t.pct>=100?'#16a34a':t.pct>=50?'#0f766e':'#0369a1',width:`${t.pct||0}%`,transition:'width .3s'}}/>
+                  </div>
+                  <span style={{fontSize:11,fontWeight:700,color:'#0f766e',flexShrink:0}}>{t.pct||0}%</span>
+                </div>
+              </div>
+              {/* Right: status + actions */}
+              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8,flexShrink:0}} onClick={e=>e.stopPropagation()}>
+                <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',borderRadius:20,background:si.bg,color:si.color}}>{si.label}</span>
+                <div style={{display:'flex',gap:4}}>
+                  {WT_STATUS.filter(s=>s.id!==t.status).map(s=>(
+                    <button key={s.id} onClick={()=>setStatus(t.id,s.id)} style={{fontSize:11,padding:'4px 10px',borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',color:'#334155',cursor:'pointer'}}>{s.label}</button>
+                  ))}
+                  <button onClick={()=>deleteTask(t.id)} style={{fontSize:11,padding:'4px 8px',borderRadius:8,border:'1px solid #fee2e2',background:'#fef2f2',color:'#dc2626',cursor:'pointer'}}>ลบ</button>
+                </div>
+              </div>
             </div>
-            {cards.length===0&&<div style={{textAlign:'center',color:'#94a3b8',fontSize:13,padding:'24px 0'}}>ไม่มีงาน</div>}
-            {cards.map(t=><TaskCard key={t.id} t={t}/>)}
           </div>;
         })}
       </div>
