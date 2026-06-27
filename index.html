@@ -4032,18 +4032,18 @@ window.__dataReady.then(data => {
     const [form,setForm]     = React.useState({title:'',type:'',dept:'production',status:'todo',priority:'normal',pct:0,due:'',stage:'',note:''});
 
     const save = ts => { setTasks(ts); localStorage.setItem(WT_KEY,JSON.stringify(ts)); };
+    const saveUpd = fn => { setTasks(prev=>{ const next=fn(prev); localStorage.setItem(WT_KEY,JSON.stringify(next)); return next; }); };
 
     const openAdd = () => { setForm({title:'',type:'',dept,status:'todo',priority:'normal',pct:0,due:'',stage:'',note:''}); setEditTask(null); setShowForm(true); };
     const openEdit = t => { setForm({...t}); setEditTask(t.id); setShowForm(true); };
     const saveForm = () => {
       if(!form.title.trim()) return;
-      if(editTask){ save(tasks.map(t=>t.id===editTask?{...form,id:editTask}:t)); }
-      else { save([{...form,id:Date.now()+''},...tasks]); }
+      if(editTask){ saveUpd(prev=>prev.map(t=>t.id===editTask?{...form,id:editTask}:t)); }
+      else { saveUpd(prev=>[{...form,id:Date.now()+''},...prev]); }
       setShowForm(false);
     };
-    const deleteTask = id => { if(confirm('ลบงานนี้?')) save(tasks.filter(t=>t.id!==id)); };
-    const setStatus = (id,status) => save(tasks.map(t=>t.id===id?{...t,status}:t));
-    const setPct    = (id,pct)    => save(tasks.map(t=>t.id===id?{...t,pct}:t));
+    const deleteTask = id => { if(confirm('ลบงานนี้?')) saveUpd(prev=>prev.filter(t=>t.id!==id)); };
+    const setStatus = (id,status) => saveUpd(prev=>prev.map(t=>t.id===id?{...t,status}:t));
 
     const filtered = tasks.filter(t=>t.dept===dept&&(typeFilter==='ALL'||t.type===typeFilter));
     const byStatus = s => filtered.filter(t=>t.status===s);
