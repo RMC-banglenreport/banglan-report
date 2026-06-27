@@ -2471,6 +2471,75 @@ window.__dataReady.then(data => {
               แท่งเข้ม = ปีนี้ ({bahtFmt(totalAmt)}) • แท่งจาง = ปีที่แล้ว ({prevTotalAmt>0?bahtFmt(prevTotalAmt):'ไม่มีข้อมูล'})
             </div>
           </ChartCard>
+
+          {/* เทียบ MoM + YoY รายชุด */}
+          {(()=>{
+            // หาเดือนล่าสุดที่มีข้อมูล
+            const allMonths = [...new Set(rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&(curYear===null||r.year===curYear)).map(r=>r.month))].sort((a,b)=>b-a);
+            const latestMonth = allMonths[0]||null;
+            if(!latestMonth) return null;
+            const prevMonth   = latestMonth>1 ? latestMonth-1 : 12;
+            const prevMonthYear = latestMonth>1 ? (curYear||Number(filterYear)) : (curYear||Number(filterYear))-1;
+
+            const teamAmt = (yr,mo) => {
+              const m={};
+              rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&r.year===yr&&r.month===mo).forEach(r=>{ m[r.contractor_team]=(m[r.contractor_team]||0)+(r.amount||0); });
+              return m;
+            };
+            const curMoM  = teamAmt(curYear||Number(filterYear), latestMonth);
+            const prevMoM = teamAmt(prevMonthYear, prevMonth);
+            const curYoY  = teamAmt(curYear||Number(filterYear), latestMonth);
+            const prevYoY = prevYear ? teamAmt(prevYear, latestMonth) : {};
+
+            const allTeamsSet = new Set([...Object.keys(curMoM),...Object.keys(prevMoM),...Object.keys(curYoY),...Object.keys(prevYoY)]);
+            const renderRows = (curMap,prevMap,colorRed) => [...allTeamsSet].map(t=>{
+              const c=curMap[t]||0, p=prevMap[t]||0;
+              if(c===0&&p===0) return null;
+              const pct = p>0 ? (c-p)/p*100 : null;
+              const isUp = pct===null?(c>0&&p===0):pct>=10;
+              const isDown = pct!==null&&pct<=-10;
+              if(colorRed&&!isUp) return null;
+              if(!colorRed&&!isDown) return null;
+              return <div key={t} style={{fontSize:13,color:colorRed?'#7f1d1d':'#166534',paddingLeft:8,borderLeft:`3px solid ${colorRed?'#c0392b':'#16a34a'}`,marginBottom:5}}>
+                {colorRed
+                  ? pct===null
+                    ? <>🆕 <b>{t}</b> เกิดขึ้นใหม่ ({bahtFmt(c)} ฿) ไม่มีในช่วงก่อน</>
+                    : <>🔺 <b>{t}</b> เพิ่มขึ้น <b>{pct.toFixed(1)}%</b> ({bahtFmt(p)} → {bahtFmt(c)} ฿)</>
+                  : <>✅ <b>{t}</b> ลดลง <b>{Math.abs(pct).toFixed(1)}%</b> ({bahtFmt(p)} → {bahtFmt(c)} ฿) — {pct<=-70?'ยอดเยี่ยมมาก!':pct<=-50?'ดีมากควบคุมได้ดี':'ปรับตัวดีขึ้น'}</>
+                }
+              </div>;
+            }).filter(Boolean);
+
+            const momUps   = renderRows(curMoM,prevMoM,true);
+            const momGoods = renderRows(curMoM,prevMoM,false);
+            const yoyUps   = renderRows(curYoY,prevYoY,true);
+            const yoyGoods = renderRows(curYoY,prevYoY,false);
+            if(momUps.length+momGoods.length+yoyUps.length+yoyGoods.length===0) return null;
+
+            return <div style={{marginTop:14,border:'1px solid #e2e8f0',borderRadius:12,overflow:'hidden'}}>
+              <div style={{background:'#f8fafc',padding:'10px 16px',fontWeight:700,fontSize:14,color:'#334155',borderBottom:'1px solid #e2e8f0'}}>
+                📊 {MONTHS_TH_SHORT[latestMonth-1]}. — การวิเคราะห์ชุดผู้รับเหมา
+              </div>
+              <div style={{padding:'12px 16px',display:'flex',gap:16,flexWrap:'wrap'}}>
+                {(momUps.length>0||momGoods.length>0)&&<div style={{flex:'1 1 280px'}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>
+                    🔄 เทียบ {MONTHS_TH_SHORT[latestMonth-1]}. vs {MONTHS_TH_SHORT[prevMonth-1]}. ปี {curYear||Number(filterYear)}
+                  </div>
+                  {momUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{momUps}</>}
+                  {momUps.length>0&&momGoods.length>0&&<div style={{height:6}}/>}
+                  {momGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{momGoods}</>}
+                </div>}
+                {prevYear&&(yoyUps.length>0||yoyGoods.length>0)&&<div style={{flex:'1 1 280px'}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>
+                    🗓 เทียบ {MONTHS_TH_SHORT[latestMonth-1]}. ปี {curYear} vs ปี {prevYear}
+                  </div>
+                  {yoyUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{yoyUps}</>}
+                  {yoyUps.length>0&&yoyGoods.length>0&&<div style={{height:6}}/>}
+                  {yoyGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{yoyGoods}</>}
+                </div>}
+              </div>
+            </div>;
+          })()}
         </>;
       })()}
 
