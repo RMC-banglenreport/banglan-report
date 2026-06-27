@@ -2248,7 +2248,7 @@ window.__dataReady.then(data => {
         const totalFail  = empItems.filter(r=>isFail(r.cause)).length;
         const prevFail   = empPrev.filter(r=>isFail(r.cause)).length;
         const failDiff   = prevFail>0 ? totalFail-prevFail : null;
-        const yoyLabel   = curYear ? `ปี ${curYear+543} vs ${prevYear+543}` : 'ทุกปี';
+        const yoyLabel   = curYear ? `ปี ${curYear} vs ${prevYear}` : 'ทุกปี';
 
         const CAT_COLOR = { fail:'#c0392b', slide:'#e67e22', tilt:'#8e44ad', other:'#7f8c8d' };
         const CAT_LABEL = { fail:'เสาเข็ม Fail', slide:'ตอกสไลด์', tilt:'ตอกเอียง/เทสต์ไม่ผ่าน/ผิดหมุด', other:'อื่นๆ' };
@@ -2416,7 +2416,7 @@ window.__dataReady.then(data => {
         const leastTeam = cList.filter(t=>t.amount>0).slice(-1)[0]||null;
         const TEAM_COLORS = ['#c0392b','#e67e22','#f39c12','#8e44ad','#2980b9'];
         const totalDiff = prevTotalAmt>0 ? totalAmt-prevTotalAmt : null;
-        const yoyLabel = curYear ? `ปี ${curYear+543} vs ปี ${prevYear+543}` : 'ทุกปี';
+        const yoyLabel = curYear ? `ปี ${curYear} vs ปี ${prevYear}` : 'ทุกปี';
 
         return <>
           <div className="kpi-row" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
