@@ -2553,48 +2553,70 @@ window.__dataReady.then(data => {
           {/* เทียบรายเดือน MoM + YoY คู่กับเดือนล่าสุด */}
           {(()=>{
             const thisYear = curYear||Number(filterYear);
-            const teamAmtByMo = (yr,mo) => { const m={}; rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&r.year===yr&&r.month===mo).forEach(r=>{ m[r.contractor_team]=(m[r.contractor_team]||0)+(r.amount||0); }); return m; };
-            const teamAmtYear = yr => { const m={}; rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&r.year===yr).forEach(r=>{ m[r.contractor_team]=(m[r.contractor_team]||0)+(r.amount||0); }); return m; };
+            const cRows = (yr,mo) => rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&r.year===yr&&(mo===null||r.month===mo));
             const allMonths = [...new Set(rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&(curYear===null||r.year===thisYear)).map(r=>r.month))].sort((a,b)=>b-a);
             if(allMonths.length===0) return null;
 
-            const renderRows = (curMap,prevMap,colorRed,allTeams) => allTeams.map(t=>{
-              const c=curMap[t]||0, p=prevMap[t]||0;
-              if(c===0&&p===0) return null;
-              const pct = p>0?(c-p)/p*100:null;
-              if(colorRed&&!(pct===null?(c>0&&p===0):pct>=10)) return null;
-              if(!colorRed&&!(pct!==null&&pct<=-10)) return null;
-              return <div key={t} style={{fontSize:13,color:colorRed?'#7f1d1d':'#166534',paddingLeft:8,borderLeft:`3px solid ${colorRed?'#c0392b':'#16a34a'}`,marginBottom:5}}>
-                {colorRed
-                  ? pct===null ? <>🆕 <b>{t}</b> เกิดขึ้นใหม่ ({bahtFmt(c)} ฿) ไม่มีในช่วงก่อน</> : <>🔺 <b>{t}</b> เพิ่มขึ้น <b>{pct.toFixed(1)}%</b> ({bahtFmt(p)} → {bahtFmt(c)} ฿)</>
-                  : <>✅ <b>{t}</b> ลดลง <b>{Math.abs(pct).toFixed(1)}%</b> ({bahtFmt(p)} → {bahtFmt(c)} ฿) — {pct<=-70?'ยอดเยี่ยมมาก!':pct<=-50?'ดีมากควบคุมได้ดี':'ปรับตัวดีขึ้น'}</>
-                }
-              </div>;
-            }).filter(Boolean);
+            // group by team then by damage_group — return count
+            const groupByTeam = rows => {
+              const m={};
+              rows.forEach(r=>{ if(!m[r.contractor_team]) m[r.contractor_team]={}; const dg=r.damage_group||r.reason||'อื่นๆ'; m[r.contractor_team][dg]=(m[r.contractor_team][dg]||0)+1; });
+              return m;
+            };
+
+            const renderTeamRows = (curRows,prevRows,colorRed) => {
+              const curMap=groupByTeam(curRows), prevMap=groupByTeam(prevRows);
+              const allTeams=[...new Set([...Object.keys(curMap),...Object.keys(prevMap)])];
+              return allTeams.map(team=>{
+                const cDg=curMap[team]||{}, pDg=prevMap[team]||{};
+                const cTotal=Object.values(cDg).reduce((a,b)=>a+b,0);
+                const pTotal=Object.values(pDg).reduce((a,b)=>a+b,0);
+                if(cTotal===0&&pTotal===0) return null;
+                const pct=pTotal>0?(cTotal-pTotal)/pTotal*100:null;
+                if(colorRed&&!(pct===null?(cTotal>0&&pTotal===0):pct>=10)) return null;
+                if(!colorRed&&!(pct!==null&&pct<=-10)) return null;
+                const allDgs=[...new Set([...Object.keys(cDg),...Object.keys(pDg)])];
+                const subItems=allDgs.map(dg=>{
+                  const c=cDg[dg]||0, p=pDg[dg]||0;
+                  if(c===0&&p===0) return null;
+                  const diff=c-p;
+                  const icon=diff>0?'↑':diff<0?'↓':'→';
+                  return <div key={dg} style={{fontSize:11,color:'#64748b',paddingLeft:12,marginTop:2}}>
+                    {icon} {dg}: {p}→{c} เคส ({diff>0?'+':''}{diff})
+                  </div>;
+                }).filter(Boolean);
+                const isNew=pct===null&&cTotal>0&&pTotal===0;
+                return <div key={team} style={{marginBottom:8,paddingLeft:8,borderLeft:`3px solid ${colorRed?'#c0392b':'#16a34a'}`}}>
+                  <div style={{fontSize:13,fontWeight:700,color:colorRed?'#7f1d1d':'#166534'}}>
+                    {colorRed
+                      ? isNew ? <>🆕 <b>{team}</b> เกิดขึ้นใหม่ ({cTotal} เคส) ไม่มีในช่วงก่อน</>
+                               : <>▲ <b>{team}</b> เพิ่มขึ้น <b>{pct.toFixed(1)}%</b> ({pTotal}→{cTotal} เคส)</>
+                      : <>✅ <b>{team}</b> ลดลง <b>{Math.abs(pct).toFixed(1)}%</b> ({pTotal}→{cTotal} เคส) — {pct<=-70?'ยอดเยี่ยมมาก!':pct<=-50?'ดีมากควบคุมได้ดี':'ปรับตัวดีขึ้น'}</>
+                    }
+                  </div>
+                  {subItems}
+                </div>;
+              }).filter(Boolean);
+            };
 
             // YoY รวมทั้งปี (คำนวณครั้งเดียว)
-            const yoyCurMap = teamAmtYear(thisYear);
-            const yoyPrevMap = prevYear ? teamAmtYear(prevYear) : {};
-            const yoyTeams = [...new Set([...Object.keys(yoyCurMap),...Object.keys(yoyPrevMap)])];
-            const yoyUps   = renderRows(yoyCurMap,yoyPrevMap,true,yoyTeams);
-            const yoyGoods = renderRows(yoyCurMap,yoyPrevMap,false,yoyTeams);
+            const yoyCur=cRows(thisYear,null), yoyPrev=prevYear?cRows(prevYear,null):[];
+            const yoyUps  =renderTeamRows(yoyCur,yoyPrev,true);
+            const yoyGoods=renderTeamRows(yoyCur,yoyPrev,false);
 
-            const blocks = allMonths.map(mo=>{
-              const prevMo = mo>1?mo-1:12;
-              const prevMoYr = mo>1?thisYear:thisYear-1;
-              const curMap = teamAmtByMo(thisYear,mo);
-              const prevMap = teamAmtByMo(prevMoYr,prevMo);
-              const allTeams = [...new Set([...Object.keys(curMap),...Object.keys(prevMap)])];
-              const ups = renderRows(curMap,prevMap,true,allTeams);
-              const goods = renderRows(curMap,prevMap,false,allTeams);
+            const blocks=allMonths.map(mo=>{
+              const prevMo=mo>1?mo-1:12, prevMoYr=mo>1?thisYear:thisYear-1;
+              const curRws=cRows(thisYear,mo), prevRws=cRows(prevMoYr,prevMo);
+              const ups  =renderTeamRows(curRws,prevRws,true);
+              const goods=renderTeamRows(curRws,prevRws,false);
               if(ups.length+goods.length===0) return null;
               return {mo,prevMo,ups,goods};
             }).filter(Boolean);
 
             if(blocks.length===0) return null;
             return <>{blocks.map(({mo,prevMo,ups,goods},bi)=>{
-              const isLatest = bi===0;
-              const showYoY  = isLatest && prevYear && (yoyUps.length+yoyGoods.length>0);
+              const isLatest=bi===0;
+              const showYoY=isLatest&&prevYear&&(yoyUps.length+yoyGoods.length>0);
               return <div key={mo} style={{marginTop:14,border:'1px solid #e2e8f0',borderRadius:12,overflow:'hidden'}}>
                 <div style={{background:'#f8fafc',padding:'10px 16px',borderBottom:'1px solid #e2e8f0'}}>
                   <div style={{fontWeight:700,fontSize:15,color:'#1e293b',marginBottom:4}}>📊 เดือน {MONTHS_TH_SHORT[mo-1]}. — การวิเคราะห์ผู้รับเหมา</div>
@@ -2607,15 +2629,15 @@ window.__dataReady.then(data => {
                 <div style={{padding:'12px 16px',display:'flex',gap:16,flexWrap:'wrap'}}>
                   <div style={{flex:'1 1 280px'}}>
                     <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>🔄 เทียบ {MONTHS_TH_SHORT[mo-1]}. vs {MONTHS_TH_SHORT[prevMo-1]}. ปี {thisYear}</div>
-                    {ups.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{ups}</>}
+                    {ups.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:6}}>⚠ น่าเฝ้าระวัง</div>{ups}</>}
                     {ups.length>0&&goods.length>0&&<div style={{height:6}}/>}
-                    {goods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{goods}</>}
+                    {goods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:6}}>✅ ควบคุมได้ดี</div>{goods}</>}
                   </div>
                   {showYoY&&<div style={{flex:'1 1 280px'}}>
                     <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>🗓 เทียบรวมทั้งปี {thisYear} vs ปี {prevYear}</div>
-                    {yoyUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{yoyUps}</>}
+                    {yoyUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:6}}>⚠ น่าเฝ้าระวัง</div>{yoyUps}</>}
                     {yoyUps.length>0&&yoyGoods.length>0&&<div style={{height:6}}/>}
-                    {yoyGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{yoyGoods}</>}
+                    {yoyGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:6}}>✅ ควบคุมได้ดี</div>{yoyGoods}</>}
                   </div>}
                 </div>
               </div>;
