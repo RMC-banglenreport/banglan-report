@@ -4054,7 +4054,7 @@ window.__dataReady.then(data => {
     const openAdd = () => { setForm({title:'',type:'',dept,status:'todo',priority:'normal',pct:0,due:'',stage:'',note:''}); setEditTask(null); setFromRaft(false); setRaftTarget(null); setShowForm(true); };
     const openEdit = t => { setForm({...t}); setEditTask(t.id); setFromRaft(false); setRaftTarget(null); setShowForm(true); };
     const openRaftRepair = (num,part) => {
-      setForm({title:`ซ่อมแพที่ ${num} — ${part}`,type:`แพผลิตเสาเข็ม — ${part}`,dept:'production',status:'todo',priority:'normal',pct:0,due:'',stage:part,note:''});
+      setForm({title:`ซ่อมแพที่ ${num} — ${part}`,type:`แพผลิตเสาเข็ม — ${part}`,dept:'production',status:'todo',priority:'normal',pct:0,due:'',stage:'',note:''});
       setEditTask(null); setFromRaft(true); setRaftTarget({num,part}); setShowForm(true);
     };
     const saveForm = () => {
