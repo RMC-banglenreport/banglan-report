@@ -551,6 +551,10 @@ function setupContractorColumn(sheet) {
     .setAllowInvalid(true)
     .build();
 
+  // ล้าง dropdown ทุกคอลัมน์ที่ไม่ใช่ colI ก่อน (ป้องกัน dropdown ค้างที่ชื่อพนักงาน)
+  const colJ = headers.indexOf('ชื่อพนักงาน') + 1;
+  if (colJ > 0) sheet.getRange(2, colJ, lastRow - 1, 1).clearDataValidations();
+
   // อ่าน merge ranges ของคอลัมน์ H
   const merges = sheet.getRange(2, colH, lastRow - 1, 1).getMergedRanges();
   const mergedRows = new Set(); // แถวที่อยู่ใน merge range แล้ว
