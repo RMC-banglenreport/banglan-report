@@ -4029,11 +4029,11 @@ window.__dataReady.then(data => {
     const [typeFilter,setTypeFilter] = React.useState('ALL');
     const [showForm,setShowForm]     = React.useState(false);
     const [editTask,setEditTask]     = React.useState(null);
-    const [form,setForm]     = React.useState({title:'',type:'backlog',dept:'production',status:'todo',priority:'normal',pct:0,due:'',note:''});
+    const [form,setForm]     = React.useState({title:'',type:'',dept:'production',status:'todo',priority:'normal',pct:0,due:'',stage:'',note:''});
 
     const save = ts => { setTasks(ts); localStorage.setItem(WT_KEY,JSON.stringify(ts)); };
 
-    const openAdd = () => { setForm({title:'',type:'backlog',dept,status:'todo',priority:'normal',pct:0,due:'',note:''}); setEditTask(null); setShowForm(true); };
+    const openAdd = () => { setForm({title:'',type:'',dept,status:'todo',priority:'normal',pct:0,due:'',stage:'',note:''}); setEditTask(null); setShowForm(true); };
     const openEdit = t => { setForm({...t}); setEditTask(t.id); setShowForm(true); };
     const saveForm = () => {
       if(!form.title.trim()) return;
@@ -4066,7 +4066,9 @@ window.__dataReady.then(data => {
           <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:4}}>ฝ่าย</div>
             <div style={{display:'flex',gap:8}}>{WT_DEPT.map(d=><button key={d.id} onClick={()=>setForm({...form,dept:d.id})} style={{flex:1,padding:'7px',borderRadius:8,border:`1.5px solid ${form.dept===d.id?'#0f766e':'#e2e8f0'}`,background:form.dept===d.id?'#0f766e':'#fff',color:form.dept===d.id?'#fff':'#334155',fontSize:12,fontWeight:600,cursor:'pointer'}}>{d.label}</button>)}</div></div>
           <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:4}}>ประเภทงาน</div>
-            <input value={form.type} onChange={e=>setForm({...form,type:e.target.value})} placeholder="พิมพ์ประเภทงาน..." style={{width:'100%',padding:'8px 12px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:13,boxSizing:'border-box'}}/></div>
+            <input value={form.type} onChange={e=>setForm({...form,type:e.target.value})} placeholder="เช่น งานค้าง, โปรเจคใหม่..." style={{width:'100%',padding:'8px 12px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:13,boxSizing:'border-box'}}/></div>
+          <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:4}}>ขั้นตอนปัจจุบัน</div>
+            <input value={form.stage} onChange={e=>setForm({...form,stage:e.target.value})} placeholder="เช่น รอวัสดุ, กำลังเชื่อม, รอตรวจรับ..." style={{width:'100%',padding:'8px 12px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:13,boxSizing:'border-box'}}/></div>
           <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:4}}>ลำดับความสำคัญ</div>
             <div style={{display:'flex',gap:8}}>{WT_PRI.map(p=><button key={p.id} onClick={()=>setForm({...form,priority:p.id})} style={{flex:1,padding:'7px',borderRadius:8,border:`1.5px solid ${form.priority===p.id?p.color:'#e2e8f0'}`,background:form.priority===p.id?p.color:'#fff',color:form.priority===p.id?'#fff':p.color,fontSize:12,fontWeight:600,cursor:'pointer'}}>{p.label}</button>)}</div></div>
           <div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:4}}>สถานะ</div>
@@ -4112,32 +4114,33 @@ window.__dataReady.then(data => {
         {sortedFiltered.map(t=>{
           const si=statusInfo[t.status]||statusInfo.todo;
           const pi=priInfo(t.priority);
-          return <div key={t.id} style={{background:'#fff',border:'1.5px solid #e2e8f0',borderRadius:14,padding:'14px 18px',boxShadow:'0 1px 4px rgba(0,0,0,.05)',cursor:'pointer',borderLeft:`4px solid ${pi.color}`}} onClick={()=>openEdit(t)}>
-            <div style={{display:'flex',alignItems:'center',gap:12}}>
-              {/* Left: title + badges */}
+          return <div key={t.id} style={{background:'#fff',border:'1.5px solid #e2e8f0',borderRadius:16,padding:'18px 22px',boxShadow:'0 2px 8px rgba(0,0,0,.06)',cursor:'pointer',borderLeft:`5px solid ${pi.color}`}} onClick={()=>openEdit(t)}>
+            <div style={{display:'flex',alignItems:'flex-start',gap:16}}>
+              {/* Left */}
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:5}}>{t.title}</div>
-                <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:10,background:pi.color+'18',color:pi.color}}>{pi.label}</span>
-                  {t.type&&<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#f1f5f9',color:'#475569'}}>{t.type}</span>}
-                  {t.due&&<span style={{fontSize:11,color:'#94a3b8'}}>📅 {t.due}</span>}
+                <div style={{fontSize:18,fontWeight:800,color:'#1e293b',marginBottom:8,lineHeight:1.3}}>{t.title}</div>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
+                  <span style={{fontSize:13,fontWeight:700,padding:'3px 12px',borderRadius:20,background:pi.color+'18',color:pi.color}}>{pi.label}</span>
+                  {t.type&&<span style={{fontSize:13,padding:'3px 12px',borderRadius:20,background:'#f1f5f9',color:'#475569',fontWeight:600}}>{t.type}</span>}
+                  {t.due&&<span style={{fontSize:13,color:'#64748b'}}>📅 {t.due}</span>}
                 </div>
-                {t.note&&<div style={{fontSize:12,color:'#64748b',marginTop:5,lineHeight:1.5}}>{t.note}</div>}
-                <div style={{marginTop:8,display:'flex',alignItems:'center',gap:8}} onClick={e=>e.stopPropagation()}>
-                  <div style={{flex:1,height:6,background:'#e2e8f0',borderRadius:3,overflow:'hidden'}}>
-                    <div style={{height:'100%',borderRadius:3,background:t.pct>=100?'#16a34a':t.pct>=50?'#0f766e':'#0369a1',width:`${t.pct||0}%`,transition:'width .3s'}}/>
+                {t.stage&&<div style={{fontSize:14,color:'#0369a1',fontWeight:700,marginBottom:6,background:'#e0f2fe',borderRadius:8,padding:'5px 12px',display:'inline-block'}}>📍 ขั้นตอนปัจจุบัน: {t.stage}</div>}
+                {t.note&&<div style={{fontSize:13,color:'#64748b',marginTop:6,lineHeight:1.6}}>{t.note}</div>}
+                <div style={{marginTop:10,display:'flex',alignItems:'center',gap:10}} onClick={e=>e.stopPropagation()}>
+                  <div style={{flex:1,height:10,background:'#e2e8f0',borderRadius:5,overflow:'hidden'}}>
+                    <div style={{height:'100%',borderRadius:5,background:t.pct>=100?'#16a34a':t.pct>=50?'#0f766e':'#0369a1',width:`${t.pct||0}%`,transition:'width .3s'}}/>
                   </div>
-                  <span style={{fontSize:11,fontWeight:700,color:'#0f766e',flexShrink:0}}>{t.pct||0}%</span>
+                  <span style={{fontSize:14,fontWeight:800,color:'#0f766e',flexShrink:0,minWidth:36}}>{t.pct||0}%</span>
                 </div>
               </div>
-              {/* Right: status + actions */}
-              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8,flexShrink:0}} onClick={e=>e.stopPropagation()}>
-                <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',borderRadius:20,background:si.bg,color:si.color}}>{si.label}</span>
-                <div style={{display:'flex',gap:4}}>
+              {/* Right */}
+              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:10,flexShrink:0}} onClick={e=>e.stopPropagation()}>
+                <span style={{fontSize:13,fontWeight:700,padding:'6px 16px',borderRadius:20,background:si.bg,color:si.color}}>{si.label}</span>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'flex-end'}}>
                   {WT_STATUS.filter(s=>s.id!==t.status).map(s=>(
-                    <button key={s.id} onClick={()=>setStatus(t.id,s.id)} style={{fontSize:11,padding:'4px 10px',borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',color:'#334155',cursor:'pointer'}}>{s.label}</button>
+                    <button key={s.id} onClick={()=>setStatus(t.id,s.id)} style={{fontSize:12,padding:'5px 12px',borderRadius:10,border:'1px solid #e2e8f0',background:'#f8fafc',color:'#334155',cursor:'pointer',fontWeight:600}}>{s.label}</button>
                   ))}
-                  <button onClick={()=>deleteTask(t.id)} style={{fontSize:11,padding:'4px 8px',borderRadius:8,border:'1px solid #fee2e2',background:'#fef2f2',color:'#dc2626',cursor:'pointer'}}>ลบ</button>
+                  <button onClick={()=>deleteTask(t.id)} style={{fontSize:12,padding:'5px 10px',borderRadius:10,border:'1px solid #fee2e2',background:'#fef2f2',color:'#dc2626',cursor:'pointer',fontWeight:600}}>ลบ</button>
                 </div>
               </div>
             </div>
