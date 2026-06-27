@@ -757,11 +757,20 @@ function syncDamageItems(ss) {
 function addPersonnelColumns(ss) {
   if (!ss) ss = SpreadsheetApp.openById(SS_MAIN_ID);
 
-  // REB-ROB: เฉพาะชื่อพนักงาน (blowcount) ไม่มีผู้รับเหมา
+  // REB-ROB: เฉพาะชื่อพนักงาน (blowcount) ลบ ชุดผู้รับเหมา ออกถ้ามี
   const sheetRR = ss.getSheetByName('รับคืนสินค้า-เสียหายหน้างาน บางเลน รหัสREB-ROB');
   if (sheetRR) {
-    const headers = sheetRR.getRange(1, 1, 1, sheetRR.getLastColumn()).getValues()[0].map(h => String(h).trim());
-    if (!headers.includes('ชื่อพนักงาน')) {
+    const headersRR = sheetRR.getRange(1, 1, 1, sheetRR.getLastColumn()).getValues()[0].map(h => String(h).trim());
+    // ลบคอลัมน์ ชุดผู้รับเหมา ออก (ถ้ามี) — ต้องลบจากขวาไปซ้าย
+    for (let i = headersRR.length - 1; i >= 0; i--) {
+      if (headersRR[i] === 'ชุดผู้รับเหมา') {
+        sheetRR.deleteColumn(i + 1);
+        Logger.log('🗑️ REB-ROB: ลบคอลัมน์ "ชุดผู้รับเหมา" ออกแล้ว');
+      }
+    }
+    // เพิ่ม ชื่อพนักงาน ถ้ายังไม่มี
+    const headersRR2 = sheetRR.getRange(1, 1, 1, sheetRR.getLastColumn()).getValues()[0].map(h => String(h).trim());
+    if (!headersRR2.includes('ชื่อพนักงาน')) {
       sheetRR.getRange(1, sheetRR.getLastColumn() + 1).setValue('ชื่อพนักงาน');
       Logger.log('✅ REB-ROB: เพิ่มคอลัมน์ "ชื่อพนักงาน"');
     }
