@@ -1891,7 +1891,8 @@ window.__dataReady.then(data => {
         <Segmented value={view} onChange={setView} options={[
           {value:'damage',label:'มูลค่าเสียหาย'},{value:'trend',label:'เทียบวิเคราะห์สาเหตุ'},
           {value:'summary',label:'ตารางสรุป'},{value:'cause',label:'แยกสาเหตุ'},
-          {value:'customer',label:'แยกลูกค้า'},{value:'detail',label:'ตารางรายการ'}
+          {value:'customer',label:'แยกลูกค้า'},{value:'employee',label:'วิเคราะห์พนักงาน'},
+          {value:'detail',label:'ตารางรายการ'}
         ]}/>
         <div style={{display:'flex',gap:'10px',flexWrap:'wrap',alignItems:'center'}}>
           {view==='damage' ? <>
@@ -2175,6 +2176,170 @@ window.__dataReady.then(data => {
 
       {/* Customer view */}
       {view==='customer' && <CustomerView items={items} totalAll={totalAll}/>}
+
+      {/* Employee / Blowcount analysis */}
+      {view==='employee' && (()=>{
+        // เฉพาะ REB-ROB ที่มีชื่อพนักงาน
+        const empItems = rawItems.filter(r =>
+          notReturnOk(r) &&
+          (r.code_type==='REB'||r.code_type==='ROB') &&
+          r.employee_name &&
+          (filterYear==='ALL' || r.year===Number(filterYear)) &&
+          (selMonths.size===0 || selMonths.has(r.month))
+        );
+
+        const isFail    = c => /fail/i.test(c||'');
+        const isSlide   = c => /สไลด์/i.test(c||'');
+        const isTilt    = c => /เอียง|เทสต์|หมุด/i.test(c||'');
+
+        // สรุปรายพนักงาน
+        const empMap = {};
+        empItems.forEach(r => {
+          const e = r.employee_name;
+          if (!empMap[e]) empMap[e] = { name:e, fail:0, slide:0, tilt:0, other:0, total:0, amount:0 };
+          empMap[e].total++;
+          empMap[e].amount += r.amount||0;
+          if      (isFail(r.cause))  empMap[e].fail++;
+          else if (isSlide(r.cause)) empMap[e].slide++;
+          else if (isTilt(r.cause))  empMap[e].tilt++;
+          else                        empMap[e].other++;
+        });
+
+        const empList = Object.values(empMap).sort((a,b)=>b.total-a.total);
+        const maxTotal = empList[0]?.total || 1;
+
+        // top / bottom fail
+        const failList = empList.filter(e=>e.fail>0).sort((a,b)=>b.fail-a.fail);
+        const mostFail = failList[0] || null;
+        const leastFail = failList[failList.length-1] || null;
+
+        const CAT_COLOR = { fail:'#c0392b', slide:'#e67e22', tilt:'#8e44ad', other:'#7f8c8d' };
+        const CAT_LABEL = { fail:'เสาเข็ม Fail', slide:'ตอกสไลด์', tilt:'ตอกเอียง/เทสต์ไม่ผ่าน/ผิดหมุด', other:'อื่นๆ' };
+
+        if (empItems.length===0) return <ChartCard title="วิเคราะห์พนักงาน (Blowcount)" subtitle="ยังไม่มีข้อมูลชื่อพนักงานในระบบ — กรุณากรอกข้อมูลในคอลัมน์ 'ชื่อพนักงาน' ในชีท REB-ROB แล้ว Sync ใหม่" span="full">
+          <div style={{color:'#94a3b8',fontSize:15,padding:'32px 0',textAlign:'center'}}>ไม่มีข้อมูลพนักงาน</div>
+        </ChartCard>;
+
+        return <>
+          {/* KPI summary row */}
+          <div className="kpi-row" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
+            <div style={{background:'#fff',borderRadius:14,padding:'18px 22px',border:'1.5px solid #e2e8f0',boxShadow:'0 1px 4px rgba(0,0,0,.06)'}}>
+              <div style={{fontSize:13,color:'#64748b',marginBottom:4}}>พนักงานทั้งหมด</div>
+              <div style={{fontSize:32,fontWeight:800,color:'#1e293b'}}>{empList.length} <span style={{fontSize:15,fontWeight:500}}>คน</span></div>
+              <div style={{fontSize:12,color:'#94a3b8'}}>{empItems.length} รายการ</div>
+            </div>
+            <div style={{background:'#fff2f2',borderRadius:14,padding:'18px 22px',border:'1.5px solid #fca5a5',boxShadow:'0 1px 4px rgba(0,0,0,.06)'}}>
+              <div style={{fontSize:13,color:'#64748b',marginBottom:4}}>เสาเข็ม Fail มากสุด</div>
+              <div style={{fontSize:24,fontWeight:800,color:'#c0392b'}}>{mostFail?.name||'–'}</div>
+              <div style={{fontSize:13,color:'#c0392b',fontWeight:700}}>{mostFail?`${mostFail.fail} เคส`:''}</div>
+            </div>
+            <div style={{background:'#f0fdf4',borderRadius:14,padding:'18px 22px',border:'1.5px solid #86efac',boxShadow:'0 1px 4px rgba(0,0,0,.06)'}}>
+              <div style={{fontSize:13,color:'#64748b',marginBottom:4}}>เสาเข็ม Fail น้อยสุด</div>
+              <div style={{fontSize:24,fontWeight:800,color:'#16a34a'}}>{leastFail&&leastFail!==mostFail?leastFail.name:failList.length>1?leastFail?.name:'–'}</div>
+              <div style={{fontSize:13,color:'#16a34a',fontWeight:700}}>{failList.length>1?`${failList[failList.length-1].fail} เคส`:failList.length===1?'พนักงานคนเดียวที่มี Fail':''}</div>
+            </div>
+            <div style={{background:'#fdf4ff',borderRadius:14,padding:'18px 22px',border:'1.5px solid #e9d5ff',boxShadow:'0 1px 4px rgba(0,0,0,.06)'}}>
+              <div style={{fontSize:13,color:'#64748b',marginBottom:4}}>ตอกเอียง/เทสต์/ผิดหมุด</div>
+              <div style={{fontSize:32,fontWeight:800,color:'#8e44ad'}}>{empItems.filter(r=>isTilt(r.cause)).length} <span style={{fontSize:15,fontWeight:500}}>เคส</span></div>
+              <div style={{fontSize:12,color:'#94a3b8'}}>ตอกสไลด์: {empItems.filter(r=>isSlide(r.cause)).length} เคส</div>
+            </div>
+          </div>
+
+          {/* ตารางรายพนักงาน */}
+          <ChartCard title="สรุปรายพนักงาน (Blowcount — REB/ROB)" subtitle="เรียงตามจำนวนเคสมากสุด" span="full">
+            <div className="table-wrap"><table className="dt">
+              <thead><tr>
+                <th className="ta-l">พนักงาน</th>
+                <th style={{textAlign:'center',color:CAT_COLOR.fail}}>เสาเข็ม Fail</th>
+                <th style={{textAlign:'center',color:CAT_COLOR.slide}}>ตอกสไลด์</th>
+                <th style={{textAlign:'center',color:CAT_COLOR.tilt}}>ตอกเอียง/<br/>เทสต์ไม่ผ่าน/ผิดหมุด</th>
+                <th style={{textAlign:'center',color:'#7f8c8d'}}>อื่นๆ</th>
+                <th style={{textAlign:'center'}}>รวม (เคส)</th>
+                <th>สัดส่วน</th>
+                <th>มูลค่ารวม (฿)</th>
+              </tr></thead>
+              <tbody>{empList.map((e,i)=>(
+                <tr key={i} style={{background:i===0?'#fff8f8':i%2===0?'#fafafa':'#fff'}}>
+                  <td className="ta-l" style={{fontWeight:700,fontSize:14}}>{e.name}</td>
+                  <td style={{textAlign:'center',fontWeight:700,color:e.fail>0?CAT_COLOR.fail:'#cbd5e1',fontSize:16}}>
+                    {e.fail>0?e.fail:'–'}
+                  </td>
+                  <td style={{textAlign:'center',fontWeight:700,color:e.slide>0?CAT_COLOR.slide:'#cbd5e1',fontSize:16}}>
+                    {e.slide>0?e.slide:'–'}
+                  </td>
+                  <td style={{textAlign:'center',fontWeight:700,color:e.tilt>0?CAT_COLOR.tilt:'#cbd5e1',fontSize:16}}>
+                    {e.tilt>0?e.tilt:'–'}
+                  </td>
+                  <td style={{textAlign:'center',color:e.other>0?'#64748b':'#cbd5e1',fontSize:14}}>
+                    {e.other>0?e.other:'–'}
+                  </td>
+                  <td style={{textAlign:'center',fontWeight:800,fontSize:18,color:'#1e293b'}}>{e.total}</td>
+                  <td style={{minWidth:140}}>
+                    <div style={{display:'flex',height:18,borderRadius:6,overflow:'hidden',background:'#f1f5f9'}}>
+                      {['fail','slide','tilt','other'].map(k=>e[k]>0&&(
+                        <div key={k} title={`${CAT_LABEL[k]}: ${e[k]}`}
+                          style={{width:`${e[k]/e.total*100}%`,background:CAT_COLOR[k],transition:'width .3s'}}/>
+                      ))}
+                    </div>
+                    <div style={{display:'flex',gap:6,marginTop:3,flexWrap:'wrap'}}>
+                      {['fail','slide','tilt','other'].map(k=>e[k]>0&&(
+                        <span key={k} style={{fontSize:10,color:CAT_COLOR[k],fontWeight:600}}>
+                          {CAT_LABEL[k].split('/')[0]}: {Math.round(e[k]/e.total*100)}%
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="strong">{bahtFmt(e.amount)}</td>
+                </tr>
+              ))}</tbody>
+              <tfoot><tr>
+                <td className="ta-l" style={{fontWeight:700}}>รวม</td>
+                <td style={{textAlign:'center',fontWeight:700,color:CAT_COLOR.fail}}>{empItems.filter(r=>isFail(r.cause)).length}</td>
+                <td style={{textAlign:'center',fontWeight:700,color:CAT_COLOR.slide}}>{empItems.filter(r=>isSlide(r.cause)).length}</td>
+                <td style={{textAlign:'center',fontWeight:700,color:CAT_COLOR.tilt}}>{empItems.filter(r=>isTilt(r.cause)).length}</td>
+                <td style={{textAlign:'center',color:'#64748b'}}>{empItems.filter(r=>!isFail(r.cause)&&!isSlide(r.cause)&&!isTilt(r.cause)).length}</td>
+                <td style={{textAlign:'center',fontWeight:800,fontSize:16}}>{empItems.length}</td>
+                <td></td>
+                <td className="strong">{bahtFmt(empItems.reduce((a,r)=>a+(r.amount||0),0))}</td>
+              </tr></tfoot>
+            </table></div>
+          </ChartCard>
+
+          {/* แยกรายละเอียดตามประเภท */}
+          <div style={{gridColumn:'1/-1',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+            {[
+              {key:'fail',label:'เสาเข็ม Fail',fn:isFail,color:CAT_COLOR.fail,bg:'#fff2f2',border:'#fca5a5'},
+              {key:'slide',label:'ตอกสไลด์',fn:isSlide,color:CAT_COLOR.slide,bg:'#fff8f0',border:'#fdba74'},
+              {key:'tilt',label:'ตอกเอียง / เทสต์ไม่ผ่าน / ผิดหมุด',fn:isTilt,color:CAT_COLOR.tilt,bg:'#fdf4ff',border:'#e9d5ff'},
+            ].map(cat=>{
+              const catItems = empItems.filter(r=>cat.fn(r.cause));
+              const catEmpMap = {};
+              catItems.forEach(r=>{ catEmpMap[r.employee_name]=(catEmpMap[r.employee_name]||0)+1; });
+              const catRanked = Object.entries(catEmpMap).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
+              const maxCat = catRanked[0]?.count||1;
+              return <div key={cat.key} style={{background:cat.bg,border:`1.5px solid ${cat.border}`,borderRadius:14,padding:'18px 20px'}}>
+                <div style={{fontSize:15,fontWeight:800,color:cat.color,marginBottom:14}}>{cat.label}</div>
+                {catRanked.length===0
+                  ? <div style={{color:'#94a3b8',fontSize:13}}>ไม่มีข้อมูล</div>
+                  : catRanked.map((e,i)=>(
+                  <div key={i} style={{marginBottom:10}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+                      <span style={{fontSize:13,fontWeight:i===0?800:600,color:'#1e293b'}}>{i+1}. {e.name}</span>
+                      <span style={{fontSize:14,fontWeight:800,color:cat.color}}>{e.count} เคส</span>
+                    </div>
+                    <div style={{background:'#fff',borderRadius:6,height:10,overflow:'hidden'}}>
+                      <div style={{height:'100%',borderRadius:6,background:cat.color,width:`${e.count/maxCat*100}%`,opacity:.85}}/>
+                    </div>
+                  </div>
+                ))}
+                {catRanked.length>0&&<div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${cat.border}`,fontSize:12,color:'#64748b'}}>
+                  รวม {catItems.length} เคส • {catRanked.length} พนักงาน
+                </div>}
+              </div>;
+            })}
+          </div>
+        </>;
+      })()}
 
       {/* Detail table */}
       {view==='detail' && <>
