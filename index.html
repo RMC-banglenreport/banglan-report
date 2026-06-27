@@ -4055,7 +4055,10 @@ window.__dataReady.then(data => {
 
     const priOrder = {urgent:0,high:1,normal:2};
     const statusInfo = {todo:{label:'รอดำเนินการ',color:'#dc2626',bg:'#fef2f2'},doing:{label:'กำลังดำเนินการ',color:'#d97706',bg:'#fffbeb'},done:{label:'เสร็จแล้ว',color:'#16a34a',bg:'#f0fdf4'}};
-    const sortedFiltered = [...filtered].sort((a,b)=>(priOrder[a.priority]??2)-(priOrder[b.priority]??2));
+    const sortedFiltered = [...filtered].sort((a,b)=>{
+      const pd=(priOrder[a.priority]??2)-(priOrder[b.priority]??2);
+      return pd!==0 ? pd : (b.pct||0)-(a.pct||0);
+    });
 
     return <div style={{padding:'20px 24px',minHeight:600}}>
       {showForm&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
