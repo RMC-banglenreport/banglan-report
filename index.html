@@ -2082,6 +2082,7 @@ window.__dataReady.then(data => {
                 delta={pctDelta!=null?{dir:pctDelta<=0?-1:1,text:''}:null}/>
             </div>;
           })()
+        : (view==='employee'||view==='contractor') ? null
         : <div className="kpi-row" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
             <KpiCard label="เสียหายรวม (กรอง)" value={bahtFmt(totalAll)} unit=" ฿"
               sub={`${[...new Set(items.map(r=>r.month))].length} เดือน`} accent={PALETTE.cancel}/>
