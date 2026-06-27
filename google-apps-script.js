@@ -493,6 +493,7 @@ function onOpen() {
     .addItem('📋 ดู Log', 'showLog')
     .addSeparator()
     .addItem('🔀 รวมสาเหตุเข้าคอลัมน์ H (ทำครั้งเดียว)', 'mergeCauseToH')
+    .addItem('🔧 จัดคอลัมน์ ID: ชุดผู้รับเหมา=I, ชื่อพนักงาน=J (ทำครั้งเดียว)', 'fixIDColumns')
     .addToUi();
 }
 
@@ -592,6 +593,44 @@ function setupContractorColumn(sheet) {
   }
 
   Logger.log('✅ ID: ตั้ง dropdown + merge ชุดผู้รับเหมาเรียบร้อย');
+}
+
+// จัดคอลัมน์ ID: ลบ ชุดคนงาน, ให้ ชุดผู้รับเหมา=I, ชื่อพนักงาน=J
+function fixIDColumns() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('เสียหายในโรงงานบางเลน รหัสID');
+  if (!sheet) { SpreadsheetApp.getUi().alert('ไม่พบ Sheet ID'); return; }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+
+  // ลบคอลัมน์ที่ชื่อ "ชุดคนงาน" ออก (จากขวาไปซ้าย)
+  for (let i = headers.length - 1; i >= 0; i--) {
+    if (headers[i] === 'ชุดคนงาน') {
+      sheet.deleteColumn(i + 1);
+      Logger.log(`🗑️ ลบคอลัมน์ "ชุดคนงาน" (col ${i+1})`);
+    }
+  }
+
+  // อ่าน headers ใหม่
+  const h2 = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+  const idxContractor = h2.indexOf('ชุดผู้รับเหมา'); // 0-based
+  const idxEmployee   = h2.indexOf('ชื่อพนักงาน');
+
+  // ถ้า ชุดผู้รับเหมา อยู่หลัง ชื่อพนักงาน → สลับตำแหน่ง
+  if (idxContractor > idxEmployee && idxContractor >= 0 && idxEmployee >= 0) {
+    const lastRow = sheet.getLastRow();
+    const colC = idxContractor + 1; // 1-based
+    const colE = idxEmployee + 1;
+
+    // copy ข้อมูลสลับกัน
+    const cVals = sheet.getRange(1, colC, lastRow, 1).getValues();
+    const eVals = sheet.getRange(1, colE, lastRow, 1).getValues();
+    sheet.getRange(1, colE, lastRow, 1).setValues(cVals);
+    sheet.getRange(1, colC, lastRow, 1).setValues(eVals);
+    Logger.log('✅ สลับ ชุดผู้รับเหมา ↔ ชื่อพนักงาน แล้ว');
+  }
+
+  SpreadsheetApp.getUi().alert('✅ จัดคอลัมน์เรียบร้อย\nI = ชุดผู้รับเหมา | J = ชื่อพนักงาน');
 }
 
 function showLog() {
