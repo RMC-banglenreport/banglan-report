@@ -2472,14 +2472,10 @@ window.__dataReady.then(data => {
             </div>
           </ChartCard>
 
-          {/* เทียบ MoM + YoY รายชุด ทุกเดือน */}
+          {/* เทียบรายเดือน MoM */}
           {(()=>{
             const thisYear = curYear||Number(filterYear);
-            const teamAmt = (yr,mo) => {
-              const m={};
-              rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&r.year===yr&&r.month===mo).forEach(r=>{ m[r.contractor_team]=(m[r.contractor_team]||0)+(r.amount||0); });
-              return m;
-            };
+            const teamAmtByMo = (yr,mo) => { const m={}; rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&r.year===yr&&r.month===mo).forEach(r=>{ m[r.contractor_team]=(m[r.contractor_team]||0)+(r.amount||0); }); return m; };
             const allMonths = [...new Set(rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&(curYear===null||r.year===thisYear)).map(r=>r.month))].sort((a,b)=>b-a);
             if(allMonths.length===0) return null;
 
@@ -2487,15 +2483,11 @@ window.__dataReady.then(data => {
               const c=curMap[t]||0, p=prevMap[t]||0;
               if(c===0&&p===0) return null;
               const pct = p>0?(c-p)/p*100:null;
-              const isUp = pct===null?(c>0&&p===0):pct>=10;
-              const isDown = pct!==null&&pct<=-10;
-              if(colorRed&&!isUp) return null;
-              if(!colorRed&&!isDown) return null;
+              if(colorRed&&!(pct===null?(c>0&&p===0):pct>=10)) return null;
+              if(!colorRed&&!(pct!==null&&pct<=-10)) return null;
               return <div key={t} style={{fontSize:13,color:colorRed?'#7f1d1d':'#166534',paddingLeft:8,borderLeft:`3px solid ${colorRed?'#c0392b':'#16a34a'}`,marginBottom:5}}>
                 {colorRed
-                  ? pct===null
-                    ? <>🆕 <b>{t}</b> เกิดขึ้นใหม่ ({bahtFmt(c)} ฿) ไม่มีในช่วงก่อน</>
-                    : <>🔺 <b>{t}</b> เพิ่มขึ้น <b>{pct.toFixed(1)}%</b> ({bahtFmt(p)} → {bahtFmt(c)} ฿)</>
+                  ? pct===null ? <>🆕 <b>{t}</b> เกิดขึ้นใหม่ ({bahtFmt(c)} ฿) ไม่มีในช่วงก่อน</> : <>🔺 <b>{t}</b> เพิ่มขึ้น <b>{pct.toFixed(1)}%</b> ({bahtFmt(p)} → {bahtFmt(c)} ฿)</>
                   : <>✅ <b>{t}</b> ลดลง <b>{Math.abs(pct).toFixed(1)}%</b> ({bahtFmt(p)} → {bahtFmt(c)} ฿) — {pct<=-70?'ยอดเยี่ยมมาก!':pct<=-50?'ดีมากควบคุมได้ดี':'ปรับตัวดีขึ้น'}</>
                 }
               </div>;
@@ -2504,44 +2496,73 @@ window.__dataReady.then(data => {
             const blocks = allMonths.map(mo=>{
               const prevMo = mo>1?mo-1:12;
               const prevMoYr = mo>1?thisYear:thisYear-1;
-              const curMap  = teamAmt(thisYear, mo);
-              const prevMoMap = teamAmt(prevMoYr, prevMo);
-              const prevYrMap = prevYear ? teamAmt(prevYear, mo) : {};
-              const allTeams = [...new Set([...Object.keys(curMap),...Object.keys(prevMoMap),...Object.keys(prevYrMap)])];
-              const momUps   = renderRows(curMap,prevMoMap,true,allTeams);
-              const momGoods = renderRows(curMap,prevMoMap,false,allTeams);
-              const yoyUps   = renderRows(curMap,prevYrMap,true,allTeams);
-              const yoyGoods = renderRows(curMap,prevYrMap,false,allTeams);
-              if(momUps.length+momGoods.length+yoyUps.length+yoyGoods.length===0) return null;
-              return {mo,prevMo,momUps,momGoods,yoyUps,yoyGoods};
+              const curMap = teamAmtByMo(thisYear,mo);
+              const prevMap = teamAmtByMo(prevMoYr,prevMo);
+              const allTeams = [...new Set([...Object.keys(curMap),...Object.keys(prevMap)])];
+              const ups = renderRows(curMap,prevMap,true,allTeams);
+              const goods = renderRows(curMap,prevMap,false,allTeams);
+              if(ups.length+goods.length===0) return null;
+              return {mo,prevMo,ups,goods};
             }).filter(Boolean);
 
             if(blocks.length===0) return null;
-            return <>{blocks.map(({mo,prevMo,momUps,momGoods,yoyUps,yoyGoods})=>(
+            return <>{blocks.map(({mo,prevMo,ups,goods})=>(
               <div key={mo} style={{marginTop:14,border:'1px solid #e2e8f0',borderRadius:12,overflow:'hidden'}}>
                 <div style={{background:'#f8fafc',padding:'10px 16px',fontWeight:700,fontSize:14,color:'#334155',borderBottom:'1px solid #e2e8f0'}}>
-                  📊 {MONTHS_TH_SHORT[mo-1]}. — การวิเคราะห์ชุดผู้รับเหมา
+                  📊 {MONTHS_TH_SHORT[mo-1]}. — เทียบ {MONTHS_TH_SHORT[mo-1]}. vs {MONTHS_TH_SHORT[prevMo-1]}. ปี {thisYear}
                 </div>
-                <div style={{padding:'12px 16px',display:'flex',gap:16,flexWrap:'wrap'}}>
-                  {(momUps.length>0||momGoods.length>0)&&<div style={{flex:'1 1 280px'}}>
-                    <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>
-                      🔄 เทียบ {MONTHS_TH_SHORT[mo-1]}. vs {MONTHS_TH_SHORT[prevMo-1]}. ปี {thisYear}
-                    </div>
-                    {momUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{momUps}</>}
-                    {momUps.length>0&&momGoods.length>0&&<div style={{height:6}}/>}
-                    {momGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{momGoods}</>}
-                  </div>}
-                  {prevYear&&(yoyUps.length>0||yoyGoods.length>0)&&<div style={{flex:'1 1 280px'}}>
-                    <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>
-                      🗓 เทียบ {MONTHS_TH_SHORT[mo-1]}. ปี {thisYear} vs ปี {prevYear}
-                    </div>
-                    {yoyUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{yoyUps}</>}
-                    {yoyUps.length>0&&yoyGoods.length>0&&<div style={{height:6}}/>}
-                    {yoyGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{yoyGoods}</>}
-                  </div>}
+                <div style={{padding:'12px 16px'}}>
+                  {ups.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{ups}</>}
+                  {ups.length>0&&goods.length>0&&<div style={{height:6}}/>}
+                  {goods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{goods}</>}
                 </div>
               </div>
             ))}</>;
+          })()}
+
+          {/* เทียบทั้งปีนี้ vs ปีที่แล้ว YoY รายชุด */}
+          {prevYear&&(()=>{
+            const thisYear = curYear||Number(filterYear);
+            const teamAmtYear = yr => { const m={}; rawItems.filter(r=>r.contractor_team&&(r.cause||'').includes('ผู้รับเหมา')&&r.year===yr).forEach(r=>{ m[r.contractor_team]=(m[r.contractor_team]||0)+(r.amount||0); }); return m; };
+            const curMap  = teamAmtYear(thisYear);
+            const prevMap = teamAmtYear(prevYear);
+            const allTeams = [...new Set([...Object.keys(curMap),...Object.keys(prevMap)])];
+            if(allTeams.length===0) return null;
+
+            const rows = allTeams.map(t=>{
+              const c=curMap[t]||0, p=prevMap[t]||0;
+              const pct = p>0?(c-p)/p*100:null;
+              const diff = c-p;
+              return {name:t,c,p,pct,diff};
+            }).sort((a,b)=>b.c-a.c);
+
+            const ups   = rows.filter(t=>t.pct===null?(t.c>0&&t.p===0):t.pct>=10);
+            const goods = rows.filter(t=>t.pct!==null&&t.pct<=-10);
+
+            if(ups.length+goods.length===0) return null;
+            return <div style={{marginTop:14,border:'1px solid #dbeafe',borderRadius:12,overflow:'hidden'}}>
+              <div style={{background:'#eff6ff',padding:'10px 16px',fontWeight:700,fontSize:14,color:'#1e40af',borderBottom:'1px solid #dbeafe'}}>
+                🗓 เทียบรวมทั้งปี {thisYear} vs ปี {prevYear} — แนวโน้มรายชุดผู้รับเหมา
+              </div>
+              <div style={{padding:'12px 16px'}}>
+                {ups.length>0&&<>
+                  <div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:6}}>⚠ น่าเฝ้าระวัง — เพิ่มขึ้นเทียบปีที่แล้ว</div>
+                  {ups.map((t,i)=><div key={i} style={{fontSize:13,color:'#7f1d1d',paddingLeft:8,borderLeft:'3px solid #c0392b',marginBottom:5}}>
+                    {t.pct===null
+                      ? <>🆕 <b>{t.name}</b> เกิดขึ้นใหม่ในปีนี้ ({bahtFmt(t.c)} ฿) ไม่มีในปีก่อน</>
+                      : <>🔺 <b>{t.name}</b> เพิ่มขึ้น <b>{t.pct.toFixed(1)}%</b> ({bahtFmt(t.p)} → {bahtFmt(t.c)} ฿) ปีนี้ค่อยๆเพิ่มขึ้น</>
+                    }
+                  </div>)}
+                </>}
+                {ups.length>0&&goods.length>0&&<div style={{height:8}}/>}
+                {goods.length>0&&<>
+                  <div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:6}}>✅ ควบคุมได้ดี — ลดลงเทียบปีที่แล้ว</div>
+                  {goods.map((t,i)=><div key={i} style={{fontSize:13,color:'#166534',paddingLeft:8,borderLeft:'3px solid #16a34a',marginBottom:5}}>
+                    ✅ <b>{t.name}</b> ลดลง <b>{Math.abs(t.pct).toFixed(1)}%</b> ({bahtFmt(t.p)} → {bahtFmt(t.c)} ฿) — {t.pct<=-70?'ยอดเยี่ยมมาก!':t.pct<=-50?'ดีมากควบคุมได้ดี':'ปรับตัวดีขึ้น'}
+                  </div>)}
+                </>}
+              </div>
+            </div>;
           })()}
         </>;
       })()}
