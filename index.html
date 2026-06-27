@@ -4054,7 +4054,7 @@ window.__dataReady.then(data => {
     const [raftInfo,setRaftInfo] = React.useState(loadRaftInfo);
     const [raftChangeModal,setRaftChangeModal] = React.useState(null);
     const [raftChangeForm,setRaftChangeForm] = React.useState({pileType:'S',section:'22'});
-    const getRaftInfo = num => ({pileType:'S',section:'22',changing:false,...(raftInfo[num]||{})});
+    const getRaftInfo = num => ({pileType:'S',section:'22',changing:false,waiting:num===9,...(raftInfo[num]||{})});
     const updateRaftInfo = (num,updates) => setRaftInfo(prev=>{
       const cur={pileType:'S',section:'22',changing:false,...(prev[num]||{})};
       const next={...prev,[num]:{...cur,...updates}};
