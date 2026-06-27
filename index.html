@@ -4025,8 +4025,9 @@ window.__dataReady.then(data => {
   const WT_DEPT   = [{id:'production',label:'ฝ่ายผลิต'},{id:'maintenance',label:'ซ่อมบำรุง'},{id:'raft',label:'แพผลิตเสาเข็ม'}];
   const WT_PRI    = [{id:'urgent',label:'ด่วนมาก',color:'#dc2626'},{id:'high',label:'ด่วน',color:'#d97706'},{id:'normal',label:'ปกติ',color:'#16a34a'}];
   const RAFT_INFO_KEY = 'rmc_raft_info_v1';
-  const PILE_S_SEC = ['18','22','26','30','35','40'];
-  const PILE_I_SEC = ['12','14','16','18','20','22','26'];
+  const PILE_SEC = ['18มอก.','18รง.','22','26','30','35','40'];
+  const PILE_S_SEC = PILE_SEC;
+  const PILE_I_SEC = PILE_SEC;
 
   function WorkTrackTab(){
     const loadTasks = () => { try{ return JSON.parse(localStorage.getItem(WT_KEY)||'[]'); }catch{ return []; } };
