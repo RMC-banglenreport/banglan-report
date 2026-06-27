@@ -3567,27 +3567,28 @@ window.__dataReady.then(data => {
         ];
         // period analysis cards
         const periodLabel=tPeriod==='quarter'?'ไตรมาส':tPeriod==='half'?'ช่วง':tPeriod==='year'?'ทั้งปี':'เดือน';
+        const addSubBk=(bkArr,curList,prevList,mA,mB)=>bkArr.map(b=>{
+          const sCm={},sPm={};
+          curList.filter(r=>mA.includes(getMonth(r))&&typeFilter(r)&&(r.type||'ไม่ระบุ')===b.type).forEach(r=>{if(r.sub_type){sCm[r.sub_type]=(sCm[r.sub_type]||0)+1;}});
+          prevList.filter(r=>mB.includes(getMonth(r))&&typeFilter(r)&&(r.type||'ไม่ระบุ')===b.type).forEach(r=>{if(r.sub_type){sPm[r.sub_type]=(sPm[r.sub_type]||0)+1;}});
+          const allSK=[...new Set([...Object.keys(sCm),...Object.keys(sPm)])];
+          return {...b,subBk:allSK.map(sk=>({sub:sk,cur:sCm[sk]||0,prev:sPm[sk]||0,diff:(sCm[sk]||0)-(sPm[sk]||0)})).sort((a,b2)=>b2.diff-a.diff)};
+        });
+        // YoY รวมทั้งปี — คำนวณครั้งเดียว
+        const allM=[1,2,3,4,5,6,7,8,9,10,11,12];
+        const yoyCm={},yoyPm={};
+        curReps.filter(r=>typeFilter(r)).forEach(r=>{const k=r.type||'ไม่ระบุ';yoyCm[k]=(yoyCm[k]||0)+1;});
+        prevReps.filter(r=>typeFilter(r)).forEach(r=>{const k=r.type||'ไม่ระบุ';yoyPm[k]=(yoyPm[k]||0)+1;});
+        const yoyAllK=[...new Set([...Object.keys(yoyCm),...Object.keys(yoyPm)])];
+        const bkYoYAll=addSubBk(yoyAllK.map(k=>({type:k,cur:yoyCm[k]||0,prev:yoyPm[k]||0,diff:(yoyCm[k]||0)-(yoyPm[k]||0)})),curReps,prevReps,allM,allM);
+        const yoyUpsAll=bkYoYAll.filter(b=>b.prev>0&&b.diff/b.prev*100>=10||b.prev===0&&b.cur>0).map(b=>({...b,pct:b.prev>0?b.diff/b.prev*100:null,flagType:b.prev===0?'new':'up'}));
+        const yoyGoodsAll=bkYoYAll.filter(b=>b.prev>0&&b.diff/b.prev*100<=-10).map(b=>({...b,pct:b.diff/b.prev*100}));
+
         const periodCards=[];
         cats.forEach((cat,i)=>{
           if(curVals[i]==null||curVals[i]===0) return;
           const months=periodMonths(i);
-          const addSubBk=(bkArr,curList,prevList,mA,mB)=>bkArr.map(b=>{
-            const sCm={},sPm={};
-            curList.filter(r=>mA.includes(getMonth(r))&&typeFilter(r)&&(r.type||'ไม่ระบุ')===b.type).forEach(r=>{if(r.sub_type){sCm[r.sub_type]=(sCm[r.sub_type]||0)+1;}});
-            prevList.filter(r=>mB.includes(getMonth(r))&&typeFilter(r)&&(r.type||'ไม่ระบุ')===b.type).forEach(r=>{if(r.sub_type){sPm[r.sub_type]=(sPm[r.sub_type]||0)+1;}});
-            const allSK=[...new Set([...Object.keys(sCm),...Object.keys(sPm)])];
-            return {...b,subBk:allSK.map(sk=>({sub:sk,cur:sCm[sk]||0,prev:sPm[sk]||0,diff:(sCm[sk]||0)-(sPm[sk]||0)})).sort((a,b2)=>b2.diff-a.diff)};
-          });
-          // yoy breakdown — เทียบรวมทั้งปี (ไม่ใช่เฉพาะเดือนนั้น)
-          const allM=[1,2,3,4,5,6,7,8,9,10,11,12];
-          const cm={},pm={};
-          curReps.filter(r=>typeFilter(r)).forEach(r=>{const k=r.type||'ไม่ระบุ';cm[k]=(cm[k]||0)+1;});
-          prevReps.filter(r=>typeFilter(r)).forEach(r=>{const k=r.type||'ไม่ระบุ';pm[k]=(pm[k]||0)+1;});
-          const allK=[...new Set([...Object.keys(cm),...Object.keys(pm)])];
-          const bkYoY=addSubBk(allK.map(k=>({type:k,cur:cm[k]||0,prev:pm[k]||0,diff:(cm[k]||0)-(pm[k]||0)})),curReps,prevReps,allM,allM);
-          const yoyUps=bkYoY.filter(b=>b.prev>0&&b.diff/b.prev*100>=10||b.prev===0&&b.cur>0).map(b=>({...b,pct:b.prev>0?b.diff/b.prev*100:null,flagType:b.prev===0?'new':'up'}));
-          const yoyGoods=bkYoY.filter(b=>b.prev>0&&b.diff/b.prev*100<=-10).map(b=>({...b,pct:b.diff/b.prev*100}));
-          // qoq breakdown (vs prev period same year)
+          // qoq breakdown only (vs prev period same year)
           let qoqUps=[],qoqGoods=[],prevCat=null;
           if(i>0&&tPeriod!=='year'){
             prevCat=cats[i-1];
@@ -3600,8 +3601,8 @@ window.__dataReady.then(data => {
             qoqUps=bkQoQ.filter(b=>b.prev>0&&b.diff/b.prev*100>=10||b.prev===0&&b.cur>0).map(b=>({...b,pct:b.prev>0?b.diff/b.prev*100:null,flagType:b.prev===0?'new':'up'}));
             qoqGoods=bkQoQ.filter(b=>b.prev>0&&b.diff/b.prev*100<=-10).map(b=>({...b,pct:b.diff/b.prev*100}));
           }
-          if(yoyUps.length>0||yoyGoods.length>0||qoqUps.length>0||qoqGoods.length>0)
-            periodCards.push({cat,i,prevCat,yoyUps,yoyGoods,qoqUps,qoqGoods});
+          if(qoqUps.length>0||qoqGoods.length>0)
+            periodCards.push({cat,i,prevCat,qoqUps,qoqGoods});
         });
         const renderTypeRows=(list,isRed)=>list.map((b,j)=>(
           <div key={j} style={{fontSize:13,color:isRed?'#7f1d1d':'#166534',paddingLeft:8,borderLeft:`3px solid ${isRed?'#c0392b':'#16a34a'}`,marginBottom:6}}>
@@ -3733,25 +3734,28 @@ window.__dataReady.then(data => {
               ))}
             </div>)}
           </div>}
-          {/* วิเคราะห์แยกรายช่วง */}
-          {[...periodCards].reverse().map(({cat,i,prevCat,yoyUps,yoyGoods,qoqUps,qoqGoods},pi)=>(
+          {/* เทียบรวมทั้งปี — แสดงครั้งเดียวด้านบน */}
+          {(yoyUpsAll.length>0||yoyGoodsAll.length>0)&&<div style={{marginTop:14,border:'1px solid #dbeafe',borderRadius:12,overflow:'hidden'}}>
+            <div style={{background:'#eff6ff',padding:'10px 16px',fontWeight:700,fontSize:14,color:'#1e40af',borderBottom:'1px solid #dbeafe'}}>
+              🗓 เทียบรวมทั้งปี {curYear} vs ปี {prevYear} — แนวโน้มประเภทปัญหา
+            </div>
+            <div style={{padding:'12px 16px'}}>
+              {yoyUpsAll.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{renderTypeRows(yoyUpsAll,true)}</>}
+              {yoyUpsAll.length>0&&yoyGoodsAll.length>0&&<div style={{height:8}}/>}
+              {yoyGoodsAll.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{renderTypeRows(yoyGoodsAll,false)}</>}
+            </div>
+          </div>}
+          {/* วิเคราะห์แยกรายช่วง (MoM เท่านั้น) */}
+          {[...periodCards].reverse().map(({cat,i,prevCat,qoqUps,qoqGoods},pi)=>(
             <div key={pi} style={{marginTop:14,border:'1px solid #e2e8f0',borderRadius:12,overflow:'hidden'}}>
               <div style={{background:'#f8fafc',padding:'10px 16px',fontWeight:700,fontSize:14,color:'#334155',borderBottom:'1px solid #e2e8f0'}}>
                 📊 {periodLabel} <span style={{color:'#2f5fd0'}}>{cat}</span> — การวิเคราะห์ประเภทปัญหา
               </div>
-              <div style={{padding:'12px 16px',display:'flex',gap:16,flexWrap:'wrap'}}>
-                {prevCat&&(qoqUps.length>0||qoqGoods.length>0)&&<div style={{flex:'1 1 280px'}}>
-                  <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>🔄 เทียบ {cat} vs {prevCat} ปี {curYear}</div>
-                  {qoqUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{renderTypeRows(qoqUps,true)}</>}
-                  {qoqUps.length>0&&qoqGoods.length>0&&<div style={{height:6}}/>}
-                  {qoqGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{renderTypeRows(qoqGoods,false)}</>}
-                </div>}
-                {(yoyUps.length>0||yoyGoods.length>0)&&<div style={{flex:'1 1 280px'}}>
-                  <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>🗓 เทียบรวมทั้งปี {curYear} vs ปี {prevYear}</div>
-                  {yoyUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{renderTypeRows(yoyUps,true)}</>}
-                  {yoyUps.length>0&&yoyGoods.length>0&&<div style={{height:6}}/>}
-                  {yoyGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{renderTypeRows(yoyGoods,false)}</>}
-                </div>}
+              <div style={{padding:'12px 16px'}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8,paddingBottom:4,borderBottom:'1px solid #e2e8f0'}}>🔄 เทียบ {cat} vs {prevCat} ปี {curYear}</div>
+                {qoqUps.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#991b1b',marginBottom:4}}>⚠ น่าเฝ้าระวัง</div>{renderTypeRows(qoqUps,true)}</>}
+                {qoqUps.length>0&&qoqGoods.length>0&&<div style={{height:6}}/>}
+                {qoqGoods.length>0&&<><div style={{fontSize:11,fontWeight:700,color:'#14532d',marginBottom:4}}>✅ ควบคุมได้ดี</div>{renderTypeRows(qoqGoods,false)}</>}
               </div>
             </div>
           ))}
