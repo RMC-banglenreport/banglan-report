@@ -491,9 +491,6 @@ function onOpen() {
     .createMenu('📊 Sync Dashboard')
     .addItem('🔄 Sync ทันที', 'syncAll')
     .addItem('📋 ดู Log', 'showLog')
-    .addSeparator()
-    .addItem('🔀 รวมสาเหตุเข้าคอลัมน์ H (ทำครั้งเดียว)', 'mergeCauseToH')
-    .addItem('🔧 จัดคอลัมน์ ID: ชุดผู้รับเหมา=I, ชื่อพนักงาน=J (ทำครั้งเดียว)', 'fixIDColumns')
     .addToUi();
 }
 
