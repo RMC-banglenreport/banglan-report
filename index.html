@@ -4623,7 +4623,7 @@ window.__dataReady.then(data => {
         <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
           {PERM_LIST.map(({k,v})=>{
             const has=isAdmin||perms[k];
-            const disabled=isAdmin||u.role==='viewer';
+            const disabled=isAdmin;
             return <button key={k} onClick={()=>!disabled&&onTogglePerm(u.id,'perm',k,!perms[k])} style={{fontSize:12,padding:'5px 12px',borderRadius:20,border:`1.5px solid ${has?'#0f766e':'#e2e8f0'}`,background:has?'#f0fdf4':'#f8fafc',color:has?'#0f766e':'#94a3b8',cursor:disabled?'default':'pointer',fontWeight:600}}>
               {v} {has?'✓':'✗'}
             </button>;
