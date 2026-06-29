@@ -4624,7 +4624,7 @@ window.__dataReady.then(data => {
     </div>;
   }
 
-  function UserManagementTab(){
+  function UserManagementTab({currentUser,onUpdateSession}){
     const db=DB;
     const [users,setUsers]=React.useState([]);
     const [loading,setLoading]=React.useState(true);
@@ -4646,6 +4646,7 @@ window.__dataReady.then(data => {
     const saveUser=async(id,fields)=>{
       const {error}=await db.from('worktrack_users').update(fields).eq('id',id);
       if(error) console.error('[saveUser] update error',error);
+      if(!error && currentUser?.id===id) onUpdateSession(fields);
       load();
     };
     const deleteUser=async id=>{if(!window.confirm('ลบผู้ใช้นี้?'))return;await db.from('worktrack_users').delete().eq('id',id);load();};
@@ -4757,7 +4758,7 @@ window.__dataReady.then(data => {
         {tab==='damage'&&<DamageDetailTab/>}
         {tab==='concrete'&&<ConcreteView year={year}/>}
         {tab==='worktrack'&&<WorkTrackTab currentUser={currentUser}/>}
-        {tab==='users'&&isAdmin&&<UserManagementTab/>}
+        {tab==='users'&&isAdmin&&<UserManagementTab currentUser={currentUser} onUpdateSession={u=>{const next={...currentUser,...u};sessionStorage.setItem('wt_user',JSON.stringify(next));setCurrentUser(next);}}/>}
       </main>
       <footer className="foot">หน่วยปริมาณ = m³ ของคอนกรีต • Strength = ksc • วัตถุดิบ = kg/m³ &nbsp;·&nbsp; ข้อมูลการผลิต 2569 (ม.ค.–เม.ย.)</footer>
     </div>;
