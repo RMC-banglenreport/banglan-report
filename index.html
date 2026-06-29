@@ -241,6 +241,7 @@
 <script>
 const SUPABASE_URL = 'https://npxzerdirspwunuckcqr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5weHplcmRpcnNwd3VudWNrY3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMjUxMjIsImV4cCI6MjA5NTcwMTEyMn0.4C1MucMeqPozXSfErLM44at7dykfzfFQvpVnoqmrMQI';
+const DB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
 // Fallback data (ใช้เมื่อยังไม่ได้ตั้งค่า Supabase)
@@ -333,7 +334,7 @@ window.__dataReady = (async function loadData() {
 
   try {
     document.getElementById('loading-text').textContent = 'กำลังเชื่อมต่อ Supabase...';
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const db = DB;
 
     const [mRes, dRes, cRes, tRes, capRes] = await Promise.all([
       db.from('production_monthly').select('*').order('year').order('month'),
@@ -2767,7 +2768,7 @@ window.__dataReady.then(data => {
     const [materials,setMaterials]=useState([]);
 
     const loadFromSupabase=()=>{
-      const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+      const db=DB;
       Promise.all([
         db.from('concrete_results').select('*').order('sample_date'),
         db.from('materials_daily').select('*').order('id')
@@ -2809,7 +2810,7 @@ window.__dataReady.then(data => {
           avg_mpa:     Number(r['เฉลี่ย MPa']||0),
           avg_ksc:     Number(r['เฉลี่ย KSC']||0),
         })).filter(r=>r.sample_date&&r.formula_name);
-        const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+        const db=DB;
         db.from('concrete_results').delete().neq('id',0).then(()=>{
           db.from('concrete_results').insert(rows).then(({error})=>{
             if(error){setSyncMsg('❌ '+error.message);}
@@ -3149,7 +3150,7 @@ window.__dataReady.then(data => {
     const [previewUrls,setPreviewUrls]=useState([]);
     const [form,setForm]=useState({title:'',report_date:'',type:'คุณภาพผลิตภัณฑ์',sub_type:'',sub_type_other:'',description:'',status:'open',fix_note:'',exclude_kpi:false});
     const fileRef=React.useRef(null);
-    const db=React.useMemo(()=>supabase.createClient(SUPABASE_URL,SUPABASE_KEY),[]);
+    const db=DB;
 
     useEffect(()=>{fetchAll();},[]);
 
@@ -3856,7 +3857,7 @@ window.__dataReady.then(data => {
     const THAI_M_FULL=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
     const [pending,setPending]=useState(null);
     useEffect(()=>{
-      const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+      const db=DB;
       db.from('pending_work').select('*').order('updated_date',{ascending:false}).limit(1)
         .then(({data})=>{ if(data&&data.length>0) setPending(data[0]); });
     },[]);
@@ -4027,7 +4028,7 @@ window.__dataReady.then(data => {
   function WorkTrackTab({currentUser}){
     const canEdit = currentUser?.role !== 'viewer';
     const deptPerm = d => currentUser?.role==='admin' || (currentUser?.role==='editor' && (currentUser?.permissions||{})[d]!==false);
-    const db = React.useMemo(()=>supabase.createClient(SUPABASE_URL,SUPABASE_KEY),[]);
+    const db = DB;
     const [loading,setLoading] = React.useState(true);
     const [tasks,setTasks]   = React.useState([]);
     const [dept,setDept]     = React.useState('production');
@@ -4505,7 +4506,7 @@ window.__dataReady.then(data => {
   const avatarColor=name=>AVATAR_COLORS[((name||'A').charCodeAt(0))%AVATAR_COLORS.length];
 
   function LoginScreen({onLogin}){
-    const db=React.useMemo(()=>supabase.createClient(SUPABASE_URL,SUPABASE_KEY),[]);
+    const db=DB;
     const [users,setUsers]=React.useState([]);
     const [selected,setSelected]=React.useState(null);
     const [pin,setPin]=React.useState('');
@@ -4581,7 +4582,7 @@ window.__dataReady.then(data => {
   }
 
   function UserManagementTab(){
-    const db=React.useMemo(()=>supabase.createClient(SUPABASE_URL,SUPABASE_KEY),[]);
+    const db=DB;
     const [users,setUsers]=React.useState([]);
     const [loading,setLoading]=React.useState(true);
     const [showAdd,setShowAdd]=React.useState(false);
