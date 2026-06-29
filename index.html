@@ -4644,12 +4644,8 @@ window.__dataReady.then(data => {
       setShowAdd(false);setNu(EMPTY_NU);load();
     };
     const saveUser=async(id,fields)=>{
-      console.log('[saveUser] id=',id,'fields=',JSON.stringify(fields));
-      const {data,error,count}=await db.from('worktrack_users').update(fields).eq('id',id).select('id');
-      console.log('[saveUser] data=',data,'error=',error,'count=',count);
-      if(error) alert('บันทึกไม่สำเร็จ: '+JSON.stringify(error));
-      else if(!data||data.length===0) alert('ไม่พบ row id='+id+' ใน DB — update ไม่มีผล');
-      else{ if(currentUser?.id===id) onUpdateSession(fields); }
+      const {error}=await db.from('worktrack_users').update(fields).eq('id',id);
+      if(!error && currentUser?.id===id) onUpdateSession(fields);
       load();
     };
     const deleteUser=async id=>{if(!window.confirm('ลบผู้ใช้นี้?'))return;await db.from('worktrack_users').delete().eq('id',id);load();};
