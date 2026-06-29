@@ -4543,7 +4543,6 @@ window.__dataReady.then(data => {
             <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{u.role==='admin'?'ผู้ดูแลระบบ':u.role==='viewer'?'ดูอย่างเดียว':'ผู้ใช้งาน'}</div>
           </div>)}
         </div>
-        <button onClick={()=>onLogin({id:'guest',name:'ผู้เยี่ยมชม',role:'viewer',permissions:{}})} style={{padding:'11px 28px',border:'2px solid #cbd5e1',background:'#fff',borderRadius:12,fontSize:14,color:'#64748b',cursor:'pointer',fontWeight:600}}>👁 เข้าดูแบบไม่ต้องล็อกอิน</button>
       </>:<div style={{background:'#fff',borderRadius:20,padding:'32px 28px',boxShadow:'0 4px 20px rgba(0,0,0,.1)',textAlign:'center',minWidth:260}}>
         <div style={{width:60,height:60,borderRadius:'50%',background:avatarColor(selected.name),display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:700,color:'#fff',margin:'0 auto 10px'}}>{selected.name[0]}</div>
         <div style={{fontSize:17,fontWeight:700,color:'#1e293b',marginBottom:4}}>{selected.name}</div>
@@ -4560,28 +4559,50 @@ window.__dataReady.then(data => {
     </div>;
   }
 
-  function UserCard({u,onDelete,onUpdatePin}){
-    const PERM_LABELS={production:'ฝ่ายผลิต',maintenance:'ซ่อมบำรุง',raft:'แพผลิตเสาเข็ม'};
+  const PERM_LIST=[{k:'production',v:'ฝ่ายผลิต'},{k:'maintenance',v:'ซ่อมบำรุง'},{k:'raft',v:'แพผลิตเสาเข็ม'}];
+
+  function UserCard({u,onDelete,onUpdatePin,onTogglePerm,onUpdateName}){
+    const [showPin,setShowPin]=React.useState(false);
     const [editPin,setEditPin]=React.useState(false);
     const [pinVal,setPinVal]=React.useState('');
-    return <div style={{background:'#fff',border:'1.5px solid #e2e8f0',borderRadius:16,padding:'16px 20px'}}>
-      <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-        <div style={{width:44,height:44,borderRadius:'50%',background:avatarColor(u.name),display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:700,color:'#fff',flexShrink:0}}>{u.name[0]}</div>
-        <div style={{flex:1}}>
-          <div style={{fontSize:15,fontWeight:700,color:'#1e293b'}}>{u.name}</div>
-          <div style={{fontSize:12,color:'#94a3b8'}}>{u.role==='admin'?'ผู้ดูแลระบบ':u.role==='viewer'?'ดูอย่างเดียว':'ผู้ใช้งาน'}</div>
+    const [editName,setEditName]=React.useState(false);
+    const [nameVal,setNameVal]=React.useState(u.name);
+    const roleLabel=u.role==='admin'?'ผู้ดูแลระบบ':u.role==='viewer'?'ดูอย่างเดียว':'ผู้ใช้งาน';
+    const perms=u.permissions||{};
+    return <div style={{background:'#fff',border:'1.5px solid #e2e8f0',borderRadius:16,padding:'16px 20px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+      <div style={{display:'flex',alignItems:'center',gap:14}}>
+        <div style={{width:48,height:48,borderRadius:'50%',background:avatarColor(u.name),display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:700,color:'#fff',flexShrink:0}}>{u.name[0]}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+            {editName
+              ?<><input value={nameVal} onChange={e=>setNameVal(e.target.value)} style={{padding:'4px 8px',border:'1.5px solid #0f766e',borderRadius:6,fontSize:14,width:120}}/>
+                <button onClick={()=>{onUpdateName(u.id,nameVal);setEditName(false);}} style={{fontSize:12,padding:'4px 10px',background:'#0f766e',color:'#fff',border:'none',borderRadius:6,cursor:'pointer'}}>บันทึก</button>
+                <button onClick={()=>setEditName(false)} style={{fontSize:12,padding:'4px 8px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:6,cursor:'pointer'}}>ยกเลิก</button></>
+              :<><span style={{fontSize:15,fontWeight:700,color:'#1e293b'}}>{u.name}</span>
+                <button onClick={()=>{setNameVal(u.name);setEditName(true);}} style={{fontSize:11,color:'#0f766e',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>แก้ไขชื่อ</button>
+              </>}
+          </div>
+          <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{roleLabel}</div>
+          <div style={{fontSize:12,color:'#64748b',marginTop:4,display:'flex',alignItems:'center',gap:6}}>
+            PIN: <span style={{letterSpacing:3}}>{showPin?u.pin:'••••'}</span>
+            <button onClick={()=>setShowPin(v=>!v)} style={{fontSize:11,color:'#0f766e',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>{showPin?'ซ่อน':'แสดง'}</button>
+            {!editPin&&<button onClick={()=>setEditPin(true)} style={{fontSize:11,color:'#0f766e',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>เปลี่ยน</button>}
+            {editPin&&<><input type="password" maxLength={4} placeholder="PIN ใหม่" value={pinVal} onChange={e=>setPinVal(e.target.value)} style={{width:64,padding:'3px 6px',border:'1.5px solid #0f766e',borderRadius:6,fontSize:13}}/>
+              <button onClick={()=>{if(pinVal.length===4){onUpdatePin(u.id,pinVal);setEditPin(false);setPinVal('');}else alert('PIN ต้องมี 4 หลัก');}} style={{fontSize:11,padding:'3px 8px',background:'#0f766e',color:'#fff',border:'none',borderRadius:6,cursor:'pointer'}}>บันทึก</button>
+              <button onClick={()=>setEditPin(false)} style={{fontSize:11,padding:'3px 6px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:6,cursor:'pointer'}}>ยกเลิก</button></>}
+          </div>
         </div>
-        <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-          {!editPin?<button onClick={()=>setEditPin(true)} style={{fontSize:12,padding:'5px 12px',border:'1px solid #e2e8f0',borderRadius:8,background:'#f8fafc',color:'#475569',cursor:'pointer'}}>เปลี่ยน PIN</button>
-          :<><input type="password" maxLength={4} placeholder="PIN ใหม่" value={pinVal} onChange={e=>setPinVal(e.target.value)} style={{width:72,padding:'5px 8px',border:'1.5px solid #0f766e',borderRadius:8,fontSize:13}}/>
-            <button onClick={()=>{if(pinVal.length===4){onUpdatePin(u.id,pinVal);setEditPin(false);setPinVal('');}else alert('PIN ต้องมี 4 หลัก');}} style={{fontSize:12,padding:'5px 10px',background:'#0f766e',color:'#fff',border:'none',borderRadius:8,cursor:'pointer'}}>บันทึก</button>
-            <button onClick={()=>setEditPin(false)} style={{fontSize:12,padding:'5px 10px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:8,cursor:'pointer'}}>ยกเลิก</button></>}
-          {u.id!=='admin'&&<button onClick={()=>onDelete(u.id)} style={{fontSize:12,padding:'5px 12px',border:'1px solid #fee2e2',borderRadius:8,background:'#fef2f2',color:'#dc2626',cursor:'pointer'}}>ลบ</button>}
-        </div>
+        {u.id!=='admin'&&<button onClick={()=>onDelete(u.id)} style={{fontSize:12,padding:'5px 12px',border:'1px solid #fee2e2',borderRadius:8,background:'#fef2f2',color:'#dc2626',cursor:'pointer',flexShrink:0}}>✕ ลบ</button>}
       </div>
-      {u.role==='editor'&&<div style={{marginTop:10,display:'flex',gap:6,flexWrap:'wrap'}}>
-        {Object.entries(PERM_LABELS).map(([k,v])=>{const has=(u.permissions||{})[k];return <span key={k} style={{fontSize:12,padding:'3px 10px',borderRadius:20,background:has?'#f0fdf4':'#f1f5f9',color:has?'#16a34a':'#94a3b8',border:`1px solid ${has?'#bbf7d0':'#e2e8f0'}`}}>{v} {has?'✓':'✗'}</span>;})}
-      </div>}
+      <div style={{marginTop:12,display:'flex',gap:8,flexWrap:'wrap'}}>
+        {PERM_LIST.map(({k,v})=>{
+          const has=u.role==='admin'||perms[k];
+          const disabled=u.role==='admin'||u.role==='viewer';
+          return <button key={k} onClick={()=>!disabled&&onTogglePerm(u.id,k,!perms[k])} style={{fontSize:13,padding:'6px 14px',borderRadius:20,border:`1.5px solid ${has?'#0f766e':'#e2e8f0'}`,background:has?'#f0fdf4':'#f8fafc',color:has?'#0f766e':'#94a3b8',cursor:disabled?'default':'pointer',fontWeight:600}}>
+            {v} {has?'✓':'✗'}
+          </button>;
+        })}
+      </div>
     </div>;
   }
 
@@ -4591,7 +4612,6 @@ window.__dataReady.then(data => {
     const [loading,setLoading]=React.useState(true);
     const [showAdd,setShowAdd]=React.useState(false);
     const [nu,setNu]=React.useState({name:'',pin:'',role:'editor',permissions:{production:true,maintenance:true,raft:true}});
-    const PERM_LABELS={production:'ฝ่ายผลิต',maintenance:'ซ่อมบำรุง',raft:'แพผลิตเสาเข็ม'};
     const load=()=>db.from('worktrack_users').select('*').order('created_at').then(({data})=>{setUsers(data||[]);setLoading(false);});
     React.useEffect(load,[]);
     const addUser=async()=>{
@@ -4599,16 +4619,26 @@ window.__dataReady.then(data => {
       await db.from('worktrack_users').insert({...nu,id:Date.now().toString()});
       setShowAdd(false);setNu({name:'',pin:'',role:'editor',permissions:{production:true,maintenance:true,raft:true}});load();
     };
-    const deleteUser=async id=>{if(id==='admin'){alert('ไม่สามารถลบ Admin');return;}if(!window.confirm('ลบผู้ใช้นี้?'))return;await db.from('worktrack_users').delete().eq('id',id);load();};
+    const deleteUser=async id=>{if(!window.confirm('ลบผู้ใช้นี้?'))return;await db.from('worktrack_users').delete().eq('id',id);load();};
     const updatePin=async(id,pin)=>{await db.from('worktrack_users').update({pin}).eq('id',id);load();};
+    const updateName=async(id,name)=>{await db.from('worktrack_users').update({name}).eq('id',id);load();};
+    const togglePerm=async(id,key,val)=>{
+      const u=users.find(u=>u.id===id);
+      const perms={...(u?.permissions||{}),[key]:val};
+      await db.from('worktrack_users').update({permissions:perms}).eq('id',id);load();
+    };
     if(loading) return <div style={{padding:40,textAlign:'center',color:'#64748b'}}>กำลังโหลด...</div>;
-    return <div style={{padding:'24px',maxWidth:760,margin:'0 auto'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+    return <div style={{padding:'24px',maxWidth:800,margin:'0 auto'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
         <div>
           <div style={{fontSize:20,fontWeight:700,color:'#1e293b'}}>จัดการผู้ใช้งาน</div>
           <div style={{fontSize:13,color:'#64748b'}}>กำหนดสิทธิ์การเข้าถึงฟังก์ชันต่างๆ ให้แต่ละผู้ใช้</div>
         </div>
         <button onClick={()=>setShowAdd(true)} style={{padding:'10px 20px',background:'#0f766e',color:'#fff',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>+ เพิ่มผู้ใช้</button>
+      </div>
+      <div style={{background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:12,padding:'12px 16px',marginBottom:20,fontSize:13,color:'#475569'}}>
+        <span style={{fontWeight:600}}>สิทธิ์ที่ตั้งได้</span> — คลิกที่ปุ่มสิทธิ์ในแต่ละผู้ใช้เพื่อเปิด/ปิด &nbsp;
+        {PERM_LIST.map(({k,v})=><span key={k} style={{display:'inline-block',marginRight:10,padding:'2px 10px',borderRadius:20,background:'#e2e8f0',color:'#475569',fontSize:12}}>{v}</span>)}
       </div>
       {showAdd&&<div style={{background:'#fff',border:'1.5px solid #e2e8f0',borderRadius:16,padding:24,marginBottom:20}}>
         <div style={{fontSize:15,fontWeight:700,marginBottom:14}}>เพิ่มผู้ใช้ใหม่</div>
@@ -4619,13 +4649,13 @@ window.__dataReady.then(data => {
         <div style={{marginBottom:12}}>
           <div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:6}}>บทบาท</div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            {[{id:'admin',label:'Admin (เต็มสิทธิ์)'},{id:'editor',label:'ผู้ใช้งาน (แก้ไขได้)'},{id:'viewer',label:'ดูอย่างเดียว'}].map(r=><button key={r.id} onClick={()=>setNu({...nu,role:r.id})} style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${nu.role===r.id?'#0f766e':'#e2e8f0'}`,background:nu.role===r.id?'#0f766e':'#fff',color:nu.role===r.id?'#fff':'#334155',fontSize:13,cursor:'pointer'}}>{r.label}</button>)}
+            {[{id:'admin',label:'Admin'},{id:'editor',label:'ผู้ใช้งาน'},{id:'viewer',label:'ดูอย่างเดียว'}].map(r=><button key={r.id} onClick={()=>setNu({...nu,role:r.id})} style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${nu.role===r.id?'#0f766e':'#e2e8f0'}`,background:nu.role===r.id?'#0f766e':'#fff',color:nu.role===r.id?'#fff':'#334155',fontSize:13,cursor:'pointer'}}>{r.label}</button>)}
           </div>
         </div>
         {nu.role==='editor'&&<div style={{marginBottom:14}}>
-          <div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:6}}>สิทธิ์แก้ไข (ติดตามงาน)</div>
+          <div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:6}}>สิทธิ์แก้ไข</div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            {Object.entries(PERM_LABELS).map(([k,v])=><button key={k} onClick={()=>setNu({...nu,permissions:{...nu.permissions,[k]:!nu.permissions[k]}})} style={{padding:'6px 14px',borderRadius:8,border:`1.5px solid ${nu.permissions[k]?'#0f766e':'#e2e8f0'}`,background:nu.permissions[k]?'#f0fdf4':'#fff',color:nu.permissions[k]?'#0f766e':'#94a3b8',fontSize:13,cursor:'pointer'}}>{v} {nu.permissions[k]?'✓':'✗'}</button>)}
+            {PERM_LIST.map(({k,v})=><button key={k} onClick={()=>setNu({...nu,permissions:{...nu.permissions,[k]:!nu.permissions[k]}})} style={{padding:'6px 14px',borderRadius:20,border:`1.5px solid ${nu.permissions[k]?'#0f766e':'#e2e8f0'}`,background:nu.permissions[k]?'#f0fdf4':'#fff',color:nu.permissions[k]?'#0f766e':'#94a3b8',fontSize:13,cursor:'pointer'}}>{v} {nu.permissions[k]?'✓':'✗'}</button>)}
           </div>
         </div>}
         <div style={{display:'flex',gap:8}}>
@@ -4634,7 +4664,7 @@ window.__dataReady.then(data => {
         </div>
       </div>}
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
-        {users.map(u=><UserCard key={u.id} u={u} onDelete={deleteUser} onUpdatePin={updatePin}/>)}
+        {users.map(u=><UserCard key={u.id} u={u} onDelete={deleteUser} onUpdatePin={updatePin} onUpdateName={updateName} onTogglePerm={togglePerm}/>)}
       </div>
     </div>;
   }
