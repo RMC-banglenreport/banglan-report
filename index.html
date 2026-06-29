@@ -4690,7 +4690,13 @@ window.__dataReady.then(data => {
       if(type==='perm'){
         saveUser(id,{permissions:{...(u.permissions||{}),[key]:val}});
       } else {
-        saveUser(id,{tab_perms:{...DEFAULT_TAB_PERMS,...(u.tab_perms||{}),[key]:val}});
+        const newTab={...DEFAULT_TAB_PERMS,...(u.tab_perms||{}),[key]:val};
+        const newPerms={...(u.permissions||{})};
+        if(!val){
+          if(key==='quality') newPerms.quality=false;
+          if(key==='worktrack'){newPerms.production=false;newPerms.maintenance=false;newPerms.raft=false;}
+        }
+        saveUser(id,{tab_perms:newTab,permissions:newPerms});
       }
     };
     if(loading) return <div style={{padding:40,textAlign:'center',color:'#64748b'}}>กำลังโหลด...</div>;
