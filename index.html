@@ -4552,7 +4552,7 @@ window.__dataReady.then(data => {
         <div style={{display:'flex',flexWrap:'wrap',gap:14,justifyContent:'center',maxWidth:640,marginBottom:20}}>
           {users.map(u=><div key={u.id} onClick={()=>{if(!u.pin||u.pin==='')onLogin(u);else{setSelected(u);setPin('');setError('');}}} style={{cursor:'pointer',textAlign:'center',padding:'18px 22px',background:'#fff',borderRadius:16,border:'2px solid #e2e8f0',minWidth:110,boxShadow:'0 2px 8px rgba(0,0,0,.05)'}}>
             <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>{u.name}</div>
-            <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{u.role==='admin'?'ผู้ดูแลระบบ':u.role==='viewer'?'ดูอย่างเดียว':'ผู้ใช้งาน'}</div>
+            <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{u.position||(u.role==='admin'?'ผู้ดูแลระบบ':u.role==='viewer'?'ผู้บริหาร':'ผู้ใช้งาน')}</div>
           </div>)}
         </div>
       </>:<div style={{background:'#fff',borderRadius:20,padding:'32px 28px',boxShadow:'0 4px 20px rgba(0,0,0,.1)',textAlign:'center',minWidth:260}}>
@@ -4570,19 +4570,21 @@ window.__dataReady.then(data => {
     </div>;
   }
 
+  const POSITION_OPTIONS=['ผู้ดูแลระบบ','ฝ่ายผลิต','ฝ่ายวางแผน','ผู้บริหาร','ฝ่ายที่ปรึกษา'];
   const PERM_LIST=[{k:'production',v:'ฝ่ายผลิต'},{k:'maintenance',v:'ซ่อมบำรุง'},{k:'raft',v:'แพผลิตเสาเข็ม'},{k:'quality',v:'รายงานปัญหา'}];
   const TAB_PERM_LIST=[{k:'meeting',v:'ประชุม'},{k:'quality',v:'รายงานปัญหา'},{k:'overview',v:'ภาพรวมผลิต'},{k:'compare',v:'เทียบรายปี'},{k:'damage',v:'มูลค่าเสียหาย'},{k:'concrete',v:'คุณภาพวัตถุดิบ'},{k:'worktrack',v:'ติดตามงาน'}];
   const DMG_SUBTAB_LIST=[{k:'dmg_damage',v:'มูลค่าเสียหาย'},{k:'dmg_trend',v:'เทียบวิเคราะห์สาเหตุ'},{k:'dmg_summary',v:'ตารางสรุป'},{k:'dmg_cause',v:'แยกสาเหตุ'},{k:'dmg_customer',v:'แยกลูกค้า'},{k:'dmg_worker',v:'วิเคราะห์ผู้ปฏิบัติงาน'},{k:'dmg_detail',v:'ตารางรายการ'}];
   const DEFAULT_DMG_SUBTABS=Object.fromEntries(DMG_SUBTAB_LIST.map(({k})=>[k,true]));
   const DEFAULT_TAB_PERMS={...Object.fromEntries(TAB_PERM_LIST.map(({k})=>[k,true])),...DEFAULT_DMG_SUBTABS};
 
-  function UserCard({u,onDelete,onUpdatePin,onTogglePerm,onUpdateName}){
+  function UserCard({u,onDelete,onUpdatePin,onTogglePerm,onUpdateName,onUpdatePosition}){
     const [showPin,setShowPin]=React.useState(false);
     const [editPin,setEditPin]=React.useState(false);
     const [pinVal,setPinVal]=React.useState('');
     const [editName,setEditName]=React.useState(false);
     const [nameVal,setNameVal]=React.useState(u.name);
-    const roleLabel=u.role==='admin'?'ผู้ดูแลระบบ':u.role==='viewer'?'ดูอย่างเดียว':'ผู้ใช้งาน';
+    const [posVal,setPosVal]=React.useState(u.position||'');
+    const roleLabel=u.position||(u.role==='admin'?'ผู้ดูแลระบบ':u.role==='viewer'?'ผู้บริหาร':'ผู้ใช้งาน');
     const perms=u.permissions||{};
     const tabPerms={...DEFAULT_TAB_PERMS,...(u.tab_perms||{})};
     const isAdmin=u.role==='admin';
@@ -4599,7 +4601,12 @@ window.__dataReady.then(data => {
                 <button onClick={()=>{setNameVal(u.name);setEditName(true);}} style={{fontSize:11,color:'#0f766e',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>แก้ไขชื่อ</button>
               </>}
           </div>
-          <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{roleLabel}</div>
+          <div style={{display:'flex',alignItems:'center',gap:6,marginTop:2}}>
+            <select value={posVal} onChange={e=>{setPosVal(e.target.value);onUpdatePosition(u.id,e.target.value);}} style={{fontSize:12,color:'#64748b',border:'1px solid #e2e8f0',borderRadius:6,padding:'2px 6px',background:'#f8fafc',cursor:'pointer'}}>
+              <option value=''>-- เลือกตำแหน่ง --</option>
+              {POSITION_OPTIONS.map(p=><option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
           <div style={{fontSize:12,color:'#64748b',marginTop:4,display:'flex',alignItems:'center',gap:6}}>
             PIN: <span style={{letterSpacing:3}}>{showPin?u.pin:'••••'}</span>
             <button onClick={()=>setShowPin(v=>!v)} style={{fontSize:11,color:'#0f766e',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>{showPin?'ซ่อน':'แสดง'}</button>
@@ -4677,6 +4684,7 @@ window.__dataReady.then(data => {
     const deleteUser=async id=>{if(!window.confirm('ลบผู้ใช้นี้?'))return;await db.from('worktrack_users').delete().eq('id',id);load();};
     const updatePin=async(id,pin)=>saveUser(id,{pin});
     const updateName=async(id,name)=>saveUser(id,{name});
+    const updatePosition=async(id,position)=>saveUser(id,{position});
     const togglePerm=async(id,type,key,val)=>{
       const u=users.find(u=>u.id===id)||{};
       if(type==='perm'){
@@ -4712,6 +4720,13 @@ window.__dataReady.then(data => {
           </div>
         </div>
         <div style={{marginBottom:12}}>
+          <div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:4}}>ตำแหน่ง</div>
+          <select value={nu.position||''} onChange={e=>setNu({...nu,position:e.target.value})} style={{width:'100%',padding:'8px 12px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:13,background:'#fff'}}>
+            <option value=''>-- เลือกตำแหน่ง --</option>
+            {POSITION_OPTIONS.map(p=><option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        <div style={{marginBottom:12}}>
           <div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:6}}>บทบาท</div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
             {[{id:'admin',label:'Admin'},{id:'editor',label:'ผู้ใช้งาน'},{id:'viewer',label:'ดูอย่างเดียว'}].map(r=><button key={r.id} onClick={()=>setNu({...nu,role:r.id})} style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${nu.role===r.id?'#0f766e':'#e2e8f0'}`,background:nu.role===r.id?'#0f766e':'#fff',color:nu.role===r.id?'#fff':'#334155',fontSize:13,cursor:'pointer'}}>{r.label}</button>)}
@@ -4741,7 +4756,7 @@ window.__dataReady.then(data => {
         </div>
       </div>}
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
-        {users.map(u=><UserCard key={u.id} u={u} onDelete={deleteUser} onUpdatePin={updatePin} onUpdateName={updateName} onTogglePerm={togglePerm}/>)}
+        {users.map(u=><UserCard key={u.id} u={u} onDelete={deleteUser} onUpdatePin={updatePin} onUpdateName={updateName} onUpdatePosition={updatePosition} onTogglePerm={togglePerm}/>)}
       </div>
     </div>;
   }
