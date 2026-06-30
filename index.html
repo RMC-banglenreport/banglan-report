@@ -3393,7 +3393,7 @@ window.__dataReady.then(data => {
       </div>}
 
       {subTab==='kpi'&&(()=>{
-        const lastYearReps=reports.filter(r=>new Date(r.report_date).getFullYear()===ceYear-1);
+        const lastYearReps=reports.filter(r=>new Date(r.report_date).getFullYear()===ceYear-1&&!r.exclude_kpi);
         const diffBadge=(a,b)=>{const d=a-b;if(d===0)return<span style={{fontSize:15,color:'#94a3b8',fontWeight:600}}>เท่ากับปีก่อน</span>;return<span style={{fontSize:22,fontWeight:900,color:d>0?'#993C1D':'#3B6D11'}}>{d>0?'▲ +'+d:' ▼ '+d} เคส</span>;};
         // sub_type breakdown for คุณภาพผลิตภัณฑ์
         const qualityRepsY=yearReps.filter(r=>r.type==='คุณภาพผลิตภัณฑ์');
