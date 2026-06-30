@@ -4760,7 +4760,7 @@ window.__dataReady.then(data => {
               {CATS.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <div style={{marginBottom:14}}>
+          {form.category!=='เปลี่ยนเมื่อชำรุด'&&<div style={{marginBottom:14}}>
             <label style={{fontSize:13,fontWeight:600,color:'#475569',display:'block',marginBottom:4}}>รอบการ Cal</label>
             <div style={{display:'flex',gap:8}}>
               <input type="number" min={1} value={form.interval_value} onChange={e=>setForm({...form,interval_value:e.target.value})} style={{width:90,padding:'10px 12px',borderRadius:8,border:'1px solid #e2e8f0',fontSize:14}}/>
@@ -4770,11 +4770,11 @@ window.__dataReady.then(data => {
                 <option value="year">ปี</option>
               </select>
             </div>
-          </div>
+          </div>}
           <div style={{marginBottom:20}}>
-            <label style={{fontSize:13,fontWeight:600,color:'#475569',display:'block',marginBottom:4}}>วันที่ Cal ล่าสุด</label>
+            <label style={{fontSize:13,fontWeight:600,color:'#475569',display:'block',marginBottom:4}}>{form.category==='เปลี่ยนเมื่อชำรุด'?'วันที่เปลี่ยนล่าสุด':'วันที่ Cal ล่าสุด'}</label>
             <input type="date" value={form.last_cal_date} onChange={e=>setForm({...form,last_cal_date:e.target.value})} style={inp}/>
-            {form.last_cal_date&&<div style={{fontSize:12,color:'#0369a1',marginTop:6,background:'#e0f2fe',padding:'6px 10px',borderRadius:6}}>
+            {form.last_cal_date&&form.category!=='เปลี่ยนเมื่อชำรุด'&&<div style={{fontSize:12,color:'#0369a1',marginTop:6,background:'#e0f2fe',padding:'6px 10px',borderRadius:6}}>
               📅 ครั้งถัดไป: <b>{fmtDate(calcNext(form.last_cal_date,form.interval_type,Number(form.interval_value)))}</b>
             </div>}
           </div>
