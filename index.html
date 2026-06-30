@@ -3149,8 +3149,9 @@ window.__dataReady.then(data => {
     const [tType,setTType]=useState('__all__');
     const [tSubType,setTSubType]=useState('__all__');
     const highlightRef=React.useRef(null);
+    const prevScrollY=React.useRef(0);
     useEffect(()=>{if(highlightId&&highlightRef.current){setTimeout(()=>highlightRef.current?.scrollIntoView({behavior:'smooth',block:'center'}),100);}},[highlightId,subTab]);
-    useEffect(()=>{if(subTab==='kpi'&&kpiReturnId){setTimeout(()=>{const el=document.getElementById(kpiReturnId);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},100);}},[subTab,kpiReturnId]);
+    useEffect(()=>{if(subTab==='kpi'){setTimeout(()=>{if(kpiReturnId){const el=document.getElementById(kpiReturnId);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});return;}}window.scrollTo({top:prevScrollY.current,behavior:'smooth'});},100);}},[subTab]);
     const [pendingFiles,setPendingFiles]=useState([]);
     const [previewUrls,setPreviewUrls]=useState([]);
     const [form,setForm]=useState({title:'',report_date:'',type:'คุณภาพผลิตภัณฑ์',sub_type:'',sub_type_other:'',description:'',status:'open',fix_note:'',exclude_kpi:false});
@@ -3761,7 +3762,7 @@ window.__dataReady.then(data => {
           {kpiModal.rows.sort((a,b)=>a.report_date>b.report_date?-1:1).map((r,i)=>{
             const m=r.report_date?Number(r.report_date.slice(5,7)):null;
             const ry=r.report_date?Number(r.report_date.slice(0,4))+543:null;
-            return<div key={r.id} onClick={()=>{if(m){setPrevSelYear(selYear);if(ry)setSelYear(ry);setSelMonth(m);setPrevSubTab('kpi');setHighlightId(r.id);setSubTab('monthly');setKpiModal(null);}}} style={{border:'1px solid #e2e8f0',borderRadius:12,padding:'14px 16px',marginBottom:10,cursor:'pointer',transition:'background 0.15s'}} onMouseEnter={e=>e.currentTarget.style.background='#f8fafc'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
+            return<div key={r.id} onClick={()=>{if(m){prevScrollY.current=window.scrollY;setPrevSelYear(selYear);if(ry)setSelYear(ry);setSelMonth(m);setPrevSubTab('kpi');setHighlightId(r.id);setSubTab('monthly');setKpiModal(null);}}} style={{border:'1px solid #e2e8f0',borderRadius:12,padding:'14px 16px',marginBottom:10,cursor:'pointer',transition:'background 0.15s'}} onMouseEnter={e=>e.currentTarget.style.background='#f8fafc'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,flexWrap:'wrap',gap:6}}>
                 <span style={{fontSize:15,fontWeight:700,color:'#1e293b'}}>{r.title}</span>
                 <span style={{fontSize:12,padding:'3px 10px',borderRadius:6,background:SB[r.status],color:SC[r.status],fontWeight:700}}>{SL[r.status]}</span>
