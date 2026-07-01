@@ -4840,6 +4840,7 @@ window.__dataReady.then(data => {
     const [showCompare,setShowCompare]=useState(true);
     const [period,setPeriod]=useState('year');
     const [view,setView]=useState('table');
+    const [expandSec,setExpandSec]=useState(null);
     const inp={width:'100%',padding:'8px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,outline:'none',fontFamily:'inherit',boxSizing:'border-box'};
     useEffect(()=>{fetch();},[]);
     function fetch(){setLoading(true);DB.from('repair_line_items').select('*').order('year').order('section').order('sort_order').order('line_item').then(({data})=>{setRows(data||[]);setLoading(false);});}
@@ -4897,6 +4898,9 @@ window.__dataReady.then(data => {
     const periodTotAll=data=>SECTIONS.reduce((s,sec)=>s+periodTot(data,sec),0);
     const pThis=periodTotAll(yearRows),pPrev=periodTotAll(prevRows);
     const pDiff=pThis-pPrev,pPct=pPrev>0?(pDiff/pPrev*100):null;
+    const periodTotLoc=(data,loc)=>LOC_GROUPS.find(g=>g.loc===loc).sections.reduce((s,sec)=>s+periodTot(data,sec),0);
+    const periodTotItem=(data,sec,item)=>data.filter(r=>r.section===sec&&r.line_item===item&&curPeriod.months.includes(r.month)).reduce((s,r)=>s+(r.amount||0),0);
+    const itemsOfSec=(data,sec)=>[...new Set(data.filter(r=>r.section===sec).map(r=>r.line_item))];
 
     return<div style={{padding:'24px 0'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,flexWrap:'wrap',gap:12}}>
@@ -4996,60 +5000,37 @@ window.__dataReady.then(data => {
       </>}
 
       {view==='compare'&&<>
-      <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:14,padding:'18px 20px',marginBottom:20}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}}>
-          <div style={{fontSize:15,fontWeight:800,color:'#1e293b'}}>🔍 เทียบ บางเลน ↔ บ่อตะกั่ว</div>
-          <div style={{display:'flex',gap:4}}>
-            {(years.length?years:[2569]).map(y=><button key={y} onClick={()=>setSelYear(y)} style={{padding:'5px 14px',border:'none',borderRadius:8,background:selYear===y?'#2f5fd0':'#f1f5f9',color:selYear===y?'#fff':'#475569',fontWeight:700,cursor:'pointer',fontSize:12}}>ปี {y}</button>)}
-          </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}}>
+        <div style={{fontSize:15,fontWeight:800,color:'#1e293b'}}>📊 เทียบปี {selYear} กับปี {selYear-1}</div>
+        <div style={{display:'flex',gap:4}}>
+          {(years.length?years:[2569]).map(y=><button key={y} onClick={()=>setSelYear(y)} style={{padding:'5px 14px',border:'none',borderRadius:8,background:selYear===y?'#2f5fd0':'#f1f5f9',color:selYear===y?'#fff':'#475569',fontWeight:700,cursor:'pointer',fontSize:12}}>ปี {y}</button>)}
         </div>
-        <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:700,color:'#94a3b8',marginBottom:14}}>
-          <span>🔵 บางเลน</span><span>ปี {selYear}</span><span>🟢 บ่อตะกั่ว</span>
-        </div>
-        {CAT_COMPARE.map(c=>{
-          const b=secTot(yearRows,c.bang),o=secTot(yearRows,c.bo);
-          const bPct=(b/cmpMax)*100,oPct=(o/cmpMax)*100;
-          return<div key={c.label} style={{marginBottom:16}}>
-            <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:'#1e293b',marginBottom:6}}>{c.label}</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 90px 1fr',gap:10,alignItems:'center'}}>
-              <div style={{display:'flex',justifyContent:'flex-end'}}>
-                <div style={{height:20,width:`${bPct}%`,minWidth:b>0?4:0,background:'#2563eb',borderRadius:'6px 0 0 6px'}}/>
-              </div>
-              <div style={{textAlign:'center',fontSize:12,fontWeight:800,color:'#1e293b'}}>{fmt(b)}<br/><span style={{color:'#94a3b8',fontWeight:600}}>vs</span><br/>{fmt(o)}</div>
-              <div style={{display:'flex'}}>
-                <div style={{height:20,width:`${oPct}%`,minWidth:o>0?4:0,background:'#0d9488',borderRadius:'0 6px 6px 0'}}/>
-              </div>
-            </div>
-          </div>;
-        })}
+      </div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:18}}>
+        {PERIODS.map(p=><button key={p.k} onClick={()=>setPeriod(p.k)} style={{padding:'6px 12px',border:`1.5px solid ${period===p.k?'#1e293b':'#e2e8f0'}`,borderRadius:8,background:period===p.k?'#1e293b':'#fff',color:period===p.k?'#fff':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer'}}>{p.label}</button>)}
       </div>
 
-      {/* เทียบปีนี้ vs ปีก่อน แบบไตรมาส/ครึ่งปี/ทั้งปี */}
-      <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:14,padding:'18px 20px',marginBottom:20}}>
-        <div style={{fontSize:15,fontWeight:800,color:'#1e293b',marginBottom:12}}>📊 เทียบปี {selYear} กับปี {selYear-1}</div>
-        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:16}}>
-          {PERIODS.map(p=><button key={p.k} onClick={()=>setPeriod(p.k)} style={{padding:'6px 12px',border:`1.5px solid ${period===p.k?'#1e293b':'#e2e8f0'}`,borderRadius:8,background:period===p.k?'#1e293b':'#fff',color:period===p.k?'#fff':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer'}}>{p.label}</button>)}
-        </div>
-        <div style={{display:'flex',gap:20,alignItems:'center',flexWrap:'wrap',justifyContent:'center',padding:'8px 0'}}>
-          <div style={{textAlign:'center'}}>
-            <div style={{fontSize:12,color:'#94a3b8',fontWeight:600,marginBottom:4}}>ปี {selYear-1} ({curPeriod.label})</div>
-            <div style={{fontSize:26,fontWeight:900,color:'#64748b'}}>{fmt(pPrev)} ฿</div>
-          </div>
-          <div style={{fontSize:24,color:'#cbd5e1'}}>→</div>
-          <div style={{textAlign:'center'}}>
-            <div style={{fontSize:12,color:'#94a3b8',fontWeight:600,marginBottom:4}}>ปี {selYear} ({curPeriod.label})</div>
-            <div style={{fontSize:26,fontWeight:900,color:'#1e293b'}}>{fmt(pThis)} ฿</div>
-          </div>
-          <div style={{background:pDiff>0?'#fef2f2':pDiff<0?'#f0fdf4':'#f1f5f9',border:`2px solid ${pDiff>0?'#fecaca':pDiff<0?'#bbf7d0':'#e2e8f0'}`,borderRadius:14,padding:'12px 24px',textAlign:'center',minWidth:170}}>
-            <div style={{fontSize:12,color:'#64748b',fontWeight:600,marginBottom:4}}>ส่วนต่าง</div>
-            <div style={{fontSize:24,fontWeight:900,color:pDiff>0?'#dc2626':pDiff<0?'#16a34a':'#64748b',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-              <span style={{fontSize:22}}>{pDiff>0?'🔺':pDiff<0?'🔻':'➖'}</span>{fmt(Math.abs(pDiff))} ฿
+      {LOC_GROUPS.filter(g=>g.loc!=='ทั่วไป').map(g=>{
+        const th=periodTotLoc(yearRows,g.loc),pv=periodTotLoc(prevRows,g.loc),df=th-pv,pct=pv>0?(df/pv*100):null;
+        return<div key={g.loc} style={{background:'#fff',border:`2px solid ${g.color}30`,borderRadius:14,padding:'18px 20px',marginBottom:16}}>
+          <div style={{fontSize:14,fontWeight:900,color:g.color,marginBottom:12}}>📍 {g.loc}</div>
+          <div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap',justifyContent:'center',padding:'4px 0 14px'}}>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:12,color:'#94a3b8',fontWeight:600,marginBottom:4}}>ปี {selYear-1}</div>
+              <div style={{fontSize:24,fontWeight:900,color:'#64748b'}}>{fmt(pv)} ฿</div>
             </div>
-            {pPct!=null&&<div style={{fontSize:13,fontWeight:700,color:pDiff>0?'#dc2626':pDiff<0?'#16a34a':'#64748b',marginTop:2}}>{pDiff>0?'เพิ่มขึ้น':pDiff<0?'ลดลง':'เท่าเดิม'} {Math.abs(pPct).toFixed(1)}%</div>}
+            <div style={{fontSize:22,color:'#cbd5e1'}}>→</div>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:12,color:'#94a3b8',fontWeight:600,marginBottom:4}}>ปี {selYear}</div>
+              <div style={{fontSize:24,fontWeight:900,color:'#1e293b'}}>{fmt(th)} ฿</div>
+            </div>
+            <div style={{background:df>0?'#fef2f2':df<0?'#f0fdf4':'#f1f5f9',border:`2px solid ${df>0?'#fecaca':df<0?'#bbf7d0':'#e2e8f0'}`,borderRadius:12,padding:'8px 18px',textAlign:'center',minWidth:150}}>
+              <div style={{fontSize:18,fontWeight:900,color:df>0?'#dc2626':df<0?'#16a34a':'#64748b',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                <span>{df>0?'🔺':df<0?'🔻':'➖'}</span>{fmt(Math.abs(df))}
+              </div>
+              {pct!=null&&<div style={{fontSize:11,fontWeight:700,color:df>0?'#dc2626':df<0?'#16a34a':'#64748b'}}>{df>0?'เพิ่มขึ้น':df<0?'ลดลง':'เท่าเดิม'} {Math.abs(pct).toFixed(1)}%</div>}
+            </div>
           </div>
-        </div>
-        {/* แยกตามหมวดในช่วงที่เลือก */}
-        <div style={{marginTop:18,borderTop:'1px solid #f1f5f9',paddingTop:14}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
             <thead><tr style={{color:'#94a3b8',fontSize:12}}>
               <th style={{textAlign:'left',padding:'4px 8px',fontWeight:700}}>หมวด</th>
@@ -5058,20 +5039,34 @@ window.__dataReady.then(data => {
               <th style={{textAlign:'right',padding:'4px 8px',fontWeight:700}}>ส่วนต่าง</th>
             </tr></thead>
             <tbody>
-              {SECTIONS.map(sec=>{
-                const th=periodTot(yearRows,sec),pv=periodTot(prevRows,sec),df=th-pv;
-                if(th===0&&pv===0)return null;
-                return<tr key={sec} style={{borderTop:'1px solid #f8fafc'}}>
-                  <td style={{padding:'7px 8px',color:'#334155',fontWeight:600}}>{sec}</td>
-                  <td style={{padding:'7px 8px',textAlign:'right',color:'#94a3b8'}}>{fmt(pv)}</td>
-                  <td style={{padding:'7px 8px',textAlign:'right',color:'#1e293b',fontWeight:700}}>{fmt(th)}</td>
-                  <td style={{padding:'7px 8px',textAlign:'right',fontWeight:700,color:df>0?'#dc2626':df<0?'#16a34a':'#94a3b8'}}>{df>0?'▲':df<0?'▼':'–'} {fmt(Math.abs(df))}</td>
-                </tr>;
+              {g.sections.map(sec=>{
+                const sth=periodTot(yearRows,sec),spv=periodTot(prevRows,sec),sdf=sth-spv;
+                if(sth===0&&spv===0)return null;
+                const isExp=expandSec===sec;
+                const its=[...new Set([...itemsOfSec(yearRows,sec),...itemsOfSec(prevRows,sec)])];
+                return<React.Fragment key={sec}>
+                <tr onClick={()=>setExpandSec(isExp?null:sec)} style={{borderTop:'1px solid #f8fafc',cursor:'pointer',background:isExp?`${g.color}08`:'transparent'}}>
+                  <td style={{padding:'8px',color:'#334155',fontWeight:600}}>{isExp?'▾':'▸'} {shortLabel(sec,g.loc)}</td>
+                  <td style={{padding:'8px',textAlign:'right',color:'#94a3b8'}}>{fmt(spv)}</td>
+                  <td style={{padding:'8px',textAlign:'right',color:'#1e293b',fontWeight:700}}>{fmt(sth)}</td>
+                  <td style={{padding:'8px',textAlign:'right',fontWeight:700,color:sdf>0?'#dc2626':sdf<0?'#16a34a':'#94a3b8'}}>{sdf>0?'▲':sdf<0?'▼':'–'} {fmt(Math.abs(sdf))}</td>
+                </tr>
+                {isExp&&its.map(item=>{
+                  const ith=periodTotItem(yearRows,sec,item),ipv=periodTotItem(prevRows,sec,item),idf=ith-ipv;
+                  if(ith===0&&ipv===0)return null;
+                  return<tr key={item} style={{background:'#fafbfc'}}>
+                    <td style={{padding:'6px 8px 6px 26px',color:'#64748b',fontSize:12}}>{item}</td>
+                    <td style={{padding:'6px 8px',textAlign:'right',color:'#cbd5e1',fontSize:12}}>{ipv?fmt(ipv):'–'}</td>
+                    <td style={{padding:'6px 8px',textAlign:'right',color:'#475569',fontSize:12,fontWeight:600}}>{ith?fmt(ith):'–'}</td>
+                    <td style={{padding:'6px 8px',textAlign:'right',fontSize:12,fontWeight:600,color:idf>0?'#dc2626':idf<0?'#16a34a':'#cbd5e1'}}>{idf>0?'▲':idf<0?'▼':'–'} {fmt(Math.abs(idf))}</td>
+                  </tr>;
+                })}
+                </React.Fragment>;
               })}
             </tbody>
           </table>
-        </div>
-      </div>
+        </div>;
+      })}
       </>}
 
       {showForm&&<div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onMouseDown={e=>{if(e.target===e.currentTarget)e.currentTarget._bd=true;}} onClick={e=>{if(e.currentTarget._bd){e.currentTarget._bd=false;setShowForm(false);}}}>
