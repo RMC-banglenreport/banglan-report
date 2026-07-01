@@ -3373,7 +3373,7 @@ window.__dataReady.then(data => {
                 <span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:TB[r.type]||'#f1f5f9',color:TC[r.type]||'#64748b',fontWeight:600}}>{r.type}{r.sub_type?<span style={{fontWeight:400,opacity:0.8}}> › {r.sub_type}</span>:null}</span>
                 {r.customer_name&&<span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:'#f1f5f9',color:'#334155',fontWeight:600}}>👤 {r.customer_name}</span>}
                 {r.department&&<span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:'#eef3fc',color:'#2f5fd0',fontWeight:600}}>{r.department}</span>}
-                {r.pile_spec&&<span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:'#f0fdf4',color:'#166534',fontWeight:600}}>🪵 {r.pile_spec}{r.pile_qty?` × ${r.pile_qty} ต้น`:''}</span>}
+                {r.pile_spec&&<span style={{fontSize:15,padding:'4px 12px',borderRadius:6,background:'#f0fdf4',color:'#166534',fontWeight:600}}>🪵 {r.pile_spec}{r.pile_qty?` x ${r.pile_qty} ท่อน`:''}</span>}
                 <span style={{fontSize:15,color:'#94a3b8',marginLeft:2}}>{fmtDate(r.report_date)}</span>
               </div>
               {r.description&&<div style={{fontSize:17,color:'#334155',lineHeight:1.8,marginBottom:14}}>{r.description}</div>}
@@ -3798,7 +3798,7 @@ window.__dataReady.then(data => {
               <input type="text" placeholder="เช่น I22x11.00m" value={form.pile_spec} onChange={e=>setForm(f=>({...f,pile_spec:e.target.value}))} style={{width:'100%',padding:'8px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,outline:'none',fontFamily:'inherit',boxSizing:'border-box'}}/>
             </div>
             <div style={{flex:1}}>
-              <div style={{fontSize:12,color:'#64748b',marginBottom:4}}>จำนวน (ต้น)</div>
+              <div style={{fontSize:12,color:'#64748b',marginBottom:4}}>จำนวน (ท่อน)</div>
               <input type="number" min={1} placeholder="0" value={form.pile_qty} onChange={e=>setForm(f=>({...f,pile_qty:e.target.value}))} style={{width:'100%',padding:'8px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:14,outline:'none',fontFamily:'inherit',boxSizing:'border-box'}}/>
             </div>
           </div>
