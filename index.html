@@ -4916,7 +4916,7 @@ window.__dataReady.then(data => {
       {/* Sub-tab nav */}
       <div style={{display:'flex',gap:6,marginBottom:16,borderBottom:'2px solid #f1f5f9'}}>
         <button onClick={()=>setView('table')} style={{padding:'10px 18px',border:'none',borderBottom:`3px solid ${view==='table'?'#2f5fd0':'transparent'}`,background:'transparent',color:view==='table'?'#2f5fd0':'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}}>📋 ตารางรายละเอียด</button>
-        <button onClick={()=>setView('compare')} style={{padding:'10px 18px',border:'none',borderBottom:`3px solid ${view==='compare'?'#2f5fd0':'transparent'}`,background:'transparent',color:view==='compare'?'#2f5fd0':'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}}>📊 เทียบปี / เทียบสถานที่</button>
+        <button onClick={()=>setView('compare')} style={{padding:'10px 18px',border:'none',borderBottom:`3px solid ${view==='compare'?'#2f5fd0':'transparent'}`,background:'transparent',color:view==='compare'?'#2f5fd0':'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}}>🎯 KPI เปรียบเทียบ</button>
       </div>
 
       {view==='table'&&<>
